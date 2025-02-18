@@ -4,6 +4,7 @@ import { PaperProvider } from 'react-native-paper';
 import { AuthProvider } from '../context/AuthContext';
 import { SocketProvider } from '../context/socketContext';
 import { ProjectProvider } from '../context/useData';
+import { SnackbarProvider } from '../context/useSnackBar';
 
 function MainLayoutProvider() {
     return (
@@ -83,13 +84,16 @@ function MainLayoutProvider() {
 export default function layout() {
     return (
         <PaperProvider>
-            <SocketProvider>
+        <SnackbarProvider>
+        <SocketProvider>
                 <AuthProvider>
                     <ProjectProvider>
                         <MainLayoutProvider />
                     </ProjectProvider>
                 </AuthProvider>
             </SocketProvider>
+        </SnackbarProvider>
+            
         </PaperProvider>
     );
 }

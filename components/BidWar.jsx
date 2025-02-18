@@ -4,19 +4,19 @@ import { StyleSheet, Text, View, ScrollView } from 'react-native'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useSocket } from '../context/socketContext'
-import { showToast } from '../helper/toasts'
+
 import { heightPerHeight, widthPerWidth } from '../helper/dimensions'
 import { Avatar, Button, Card, Chip, Title, Snackbar, Paragraph, Icon } from 'react-native-paper'
-
-import { ProgressBar } from 'react-native-paper';
 import MyDialog, { MyDialogNotify } from './Dialog'
-import CustomSnackbar from './CustomSnackbar'
+
 import { router, useFocusEffect } from 'expo-router'
 import CurrentActivePlayer from './CurrentActivePlayer'
+import RefreshLayout from '../helper/RefreshLayout'
+import { useSnackbar } from '../context/useSnackBar'
 
 
 export default function BidWar({ auctionDetails }) {
-  const { mydetails, userRole } = useAuth();
+  const { mydetails, userRole, loggedInUser, isLoggedIn } = useAuth();
   // console.log({ mydetails })
   const [user, setUser] = useState({})
 
@@ -35,8 +35,8 @@ export default function BidWar({ auctionDetails }) {
   const [nextBid, setNextBid] = useState(null);
   const [currentBidder, setCurentBidder] = useState('')
   const [bidsHistory, setBidHistory] = useState([])
-  const [totalPurse,setTotalPurse] = useState(0)
-  const [disableBid,setDisableBid] = useState(false)
+  const [totalPurse, setTotalPurse] = useState(0)
+  const [disableBid, setDisableBid] = useState(false)
 
   // -----------------------dialog--------------------------
   const [visible, setVisible] = React.useState(false);
@@ -44,15 +44,13 @@ export default function BidWar({ auctionDetails }) {
   const [snackBarContent, setSnackBarContent] = useState('fg')
   const [noitfyDetails, setNotifyDetails] = useState(null)
 
+  const { showSnackbar } = useSnackbar()
 
-  const onToggleSnackBar = () => setVisible(!visible);
-
-  const onDismissSnackBar = () => setVisible(false);
 
 
   const handleCurrentPlayer = useCallback((data) => {
     // console.log('current Player', data)
-    if ((!data.data) && user?.role === "admin") {
+    if ((!data.data) && loggedInUser?.role === "admin") {
       // console.log('inside null')
       socket.emit('EndAuction', {
         roomId: auctionDetails.roomId,
@@ -66,8 +64,19 @@ export default function BidWar({ auctionDetails }) {
     if (!data.data) setCurrentActivePlayer(null)
     // console.log('Current Player:', data);
     const bids = data.data.battleground.bids
+    console.log('user in active current player', loggedInUser?._id)
     if (bids.length) {
+
       const lastObj = bids[bids.length - 1]
+      if (isLoggedIn) {
+        if (lastObj?.bidderId === loggedInUser._id) {
+          setDisableBid(true)
+        } else {
+          setDisableBid(false)
+        }
+      }
+
+
       // console.log({ lastObj })
       setNextBid(lastObj.nextBidAmount)
       setCurrentBid(lastObj.bidAmount)
@@ -85,30 +94,15 @@ export default function BidWar({ auctionDetails }) {
 
   const startAuction = () => {
     socket.emit('start:auctionTable', { started: true, roomId: auctionDetails.roomId, auctionId: auctionDetails._id });
-    showToast('Auction Started');
+    showSnackbar('Auction Started', 'success')
     setIsStarted(true);
-    // // Start the timer when auction begins
-    // let countdown = 60; // Timer for 60 seconds
-    // const timerInterval = setInterval(() => {
-    //   countdown -= 1;
-    //   setTimer(countdown);
-    //   setProgress(countdown / 60);  // Update progress bar
-
-    //   if (countdown <= 0) {
-    //     clearInterval(timerInterval);  // Stop the timer
-    //     setCurrentActivePlayer(null);  // Reset current active player
-    //     showToast('Time expired! Showing current player.');
-    //     // Optionally, display current player data if available
-    //     socket.emit('get:currentPlayer', auctionDetails.roomId);
-    //   }
-    // }, 1000); // Update timer every second
   };
   // ----------------emit---------------------------
   const handleBid = () => {
-if(totalPurse <= nextBid){
-  showToast('Not enough purse')
-  return  // If user does not have enough purse, do nothing and return
-}
+    if (totalPurse <= nextBid) {
+      showSnackbar('Not Enough Purse', 'info')
+      return  // If user does not have enough purse, do nothing and return
+    }
     const payload = {
       playerId: currentActivePlayer._id,
       bidderName: user.name,
@@ -122,7 +116,7 @@ if(totalPurse <= nextBid){
   const soldTo = () => {
     // console.log({ currentBidder })
     if (!currentBidder) {
-      showToast('No current player to sell to')
+      showSnackbar('No current player to sell to', 'info')
       socket.emit('unSold', {
         playerId: currentActivePlayer._id,
         roomId: auctionDetails.roomId,
@@ -160,27 +154,29 @@ if(totalPurse <= nextBid){
   // ---------------------listen----------------------------------
   const getCurrentBid = useCallback((data) => {
     // console.log('current Bid', data)
+    console.log(`${loggedInUser?.name} current Bid`, data)
     const bids = data.bids
-console.log(bids[bids.length -1])
-const userId = JSON.parse(mydetails)
-console.log(`user`,userId._id)
+
     setNextBid(bids[bids.length - 1].nextBidAmount)
     setCurrentBid(bids[bids.length - 1].bidAmount)
     setCurentBidder(bids[bids.length - 1].bidderName)
-    if(bids[bids.length - 1].bidderId===userId._id){
-      setDisableBid(true)
+    if (isLoggedIn) {
+      if (bids[bids.length - 1].bidderId === loggedInUser._id) {
+        setDisableBid(true)
+      } else {
+        setDisableBid(false)
+      }
     }
-
     setBidHistory(bids.reverse())
   }, [])
 
   const soldTofn = useCallback((data) => {
     console.log('Sold to', data)
     console.log(user)
-    if(data.bidderId._Id==user.id){
-      showToast('You sold to this player')
+    if (data.bidderId._Id == user.id) {
+      showSnackbar('You purchased this player', "success")
       // console.log('dsfd')
-      const userId= JSON.parse(mydetails)
+      const userId = JSON.parse(mydetails)
       socket.emit('getPurse', {
         userId: userId._id,
         roomId: auctionDetails.roomId,
@@ -216,24 +212,30 @@ console.log(`user`,userId._id)
     }
   }, [noitfyDetails]);
 
-  useFocusEffect(
-    useCallback(() => {
+  const isAuctionStartedfn = () => {
+    if (!isStarted) {
 
-      if (!isStarted) {
-
-        socket.emit('isAuctionStarted', {
-          roomId: auctionDetails.roomId,
-          auctionId: auctionDetails._id,
-          socketId: socket.id
-        })
-      }
-      socket.emit('getPurse', {
-        userId: user?._id,
+      socket.emit('isAuctionStarted', {
         roomId: auctionDetails.roomId,
         auctionId: auctionDetails._id,
         socketId: socket.id
-      });
-// console.log({user:user._id})
+      })
+    }
+    const payload = {
+      userId: loggedInUser?._id,
+      roomId: auctionDetails.roomId,
+      auctionId: auctionDetails._id,
+      socketId: socket.id
+    }
+    console.log(payload)
+    if (userRole && userRole === "organisation") {
+
+      socket.emit('getPurse', payload);
+    }
+  }
+  useFocusEffect(
+    useCallback(() => {
+      isAuctionStartedfn()
       return () => {
         console.log('Tab is unfocused');
       };
@@ -243,7 +245,7 @@ console.log(`user`,userId._id)
   useEffect(() => {
     if (socket) {
       socket.on('user:joined', (data) => {
-        showToast(`${data.userId.name} Joined In Auction`);
+        showSnackbar(`${data?.userId?.name} Joined In Auction`, "info")
       });
       socket.on('getPurse', (data) => {
         // console.log('Purse', data)
@@ -252,7 +254,8 @@ console.log(`user`,userId._id)
 
 
       socket.on('start:auctionTable', (data) => {
-        showToast('auction started')
+        showSnackbar('Auction Started', 'sucess')
+
         setIsStarted(true)
 
       });
@@ -266,14 +269,16 @@ console.log(`user`,userId._id)
       socket.on('auctionEnd', (data) => {
         // console.log('Auction End', data)
         setIsStarted(false)
-        showToast('Auction Ended')
+        showSnackbar('Auction Ended', 'info')
+
         router.replace('(home)')
 
       })
       socket.on('isAuctionStarted', (data) => {
         if (data.isStarted) {
           setIsStarted(true)
-          showToast('Auction Started')
+
+          showSnackbar('Auction Started', 'success')
         }
       })
       socket.on('lastChance', lastChanceHanlder);
@@ -294,148 +299,149 @@ console.log(`user`,userId._id)
 
       };
     }
-  }, [socket, auctionDetails,user]);
+  }, [socket, auctionDetails, user]);
 
+  const isValidOragnisationUser = () => {
+    console.log({ loggedInUser, status: loggedInUser.status })
+    if (userRole === "organisation" && loggedInUser?.status !== "accepted") {
+      return false
+    } else {
+      return true
+    }
+  }
+  const showOptions = () => {
+    if (isLoggedIn) {
+      if (loggedInUser?.auctionId === auctionDetails._id) {
+        return true
 
+      } else {
+        return false
+      }
+    }
+    return ''
+  }
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      {visibleModal && <MyDialog visible={visibleModal} setVisible={setVisibleModal} currentActivePlayer={currentActivePlayer} currentBid={currentBidder} bidsHistory={bidsHistory} />}
-      <MyDialogNotify visible={visible} setVisible={setVisible} message={snackBarContent} />
+    <RefreshLayout refreshFunction={isAuctionStartedfn}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {visibleModal && <MyDialog visible={visibleModal} setVisible={setVisibleModal} currentActivePlayer={currentActivePlayer} currentBid={currentBidder} bidsHistory={bidsHistory} />}
+        <MyDialogNotify visible={visible} setVisible={setVisible} message={snackBarContent} />
 
-      {
-        isStarted ? (
-          <View style={{
-            marginTop:heightPerHeight(30),
-            
-          }}>
-            {userRole && <Card style={{
-              padding:30
+        {
+          isStarted ? (
+            <View style={{
+              marginTop: heightPerHeight(5),
+
             }}>
-              <Card.Title title="Team summary" />
-              <Button style={{ width: 150 }} icon="baseball-bat" mode="contained" onPress={() => router.push('puchasedPlayer')}>
-                Purchased
-              </Button>
-              <Text style={{
-                marginTop: 10,
-                marginBottom: 10,
-                marginLeft: 10,
-                color: 'green' ,
-                textAlign: 'right'
-              }}>Purse :: {totalPurse}</Text>
-              <>
-              </>
-            </Card>}
-         
-            {currentActivePlayer ? (
-              <Card style={{ marginBottom: 20 }}>
-                <CurrentActivePlayer
-                  currentActivePlayer={currentActivePlayer}
-                  currentBid={currentBid}
-                  currentBidder={currentBidder}
+              {(userRole && userRole == "organisation") && <Card style={{
+                padding: 30
+              }}>
+                <Card.Title title="Team summary" />
+                <Button style={{ width: 150 }} icon="baseball-bat" mode="contained" onPress={() => router.push('puchasedPlayer')}>
+                  Purchased
+                </Button>
+                <Text style={{
+                  marginTop: 10,
+                  marginBottom: 10,
+                  marginLeft: 10,
+                  color: 'green',
+                  textAlign: 'right'
+                }}>Purse :: {totalPurse}</Text>
+                <>
+                </>
+              </Card>}
+        
+              {currentActivePlayer ? (
+                <Card style={{ marginBottom: 20 }}>
+                  <CurrentActivePlayer
+                    currentActivePlayer={currentActivePlayer}
+                    currentBid={currentBid}
+                    currentBidder={currentBidder}
 
-                />
-                {/* <Card.Content >
-                  <Card.Title
-                    title={currentActivePlayer.name}
-                    right={() => <Chip background={'red'}  >{currentActivePlayer?.basePrice}</Chip>}
                   />
-                  <View style={{
-                    flexDirection: "row", justifyContent: "space-between", alignItems: "center"
-                  }}>
-                    <View>
 
-                      <Text style={{ marginTop: 10 }}>Name: {currentActivePlayer.name}</Text>
-                      <Text style={{ marginTop: 5 }}>Age: {currentActivePlayer.age}</Text>
-                      <Text style={{ marginTop: 5 }}>Email: {currentActivePlayer.email}</Text>
-                      <Text style={{ marginTop: 5 }}>Phone: {currentActivePlayer.phone}</Text>
-                      <Text style={{ marginTop: 5 }}>Player Type: {currentActivePlayer.playerRole}</Text>
+                  {noitfyDetails && <View style={styles.notify}>
+                    <Text>{noitfyDetails}</Text>
+                  </View>}
+                  {
+                    showOptions() && <> {
+                    (userRole === "organisation") && <>
+                      <Button disabled={disableBid || !isValidOragnisationUser()} mode="contained" onPress={() => handleBid()} style={{ marginTop: 20, marginVertical: 10, marginHorizontal: 20 }}>
+                        Make Bid {nextBid || currentBid}
+                      </Button>
+                      <Button mode="contained" onPress={() => outOfRace()} style={{ marginTop: 20, marginVertical: 10, marginHorizontal: 20 }}>
+                        Out Of Race
+                      </Button>
+                    </>
+                  }</>
+                  }
+                 
+                  {
+                    userRole == "admin" && <View style={{ gap: "5%", marginTop: 20, marginVertical: 10, marginHorizontal: 20, flexDirection: "row", width: "100%" }}>
+
+                      <Button style={{ width: '42%' }} mode="contained" onPress={() => soldTo()} >
+                        {
+                          !currentBidder ? "Unsold.." : "Sold..."
+                        }
+
+                      </Button>
+                      <Button style={{ width: '42%' }} mode="contained" onPress={() => lastChance()} >
+                        Last Chance
+                      </Button>
                     </View>
-                    <Avatar.Image size={100} source={{
-                      uri: 'https://canto-wp-media.s3.amazonaws.com/app/uploads/2019/09/19193320/image-url-15.jpg'
-                    }} />
-                  </View>
-                  {nextBid && <Text style={styles.currentBid}>Current Bid :{currentBid}</Text>}
-                  {currentBidder && <Text style={styles.currentBid}>Bidder :{currentBidder}</Text>}
-                </Card.Content> */}
-                {noitfyDetails && <View style={styles.notify}>
-                  <Text>{noitfyDetails}</Text>
-                </View>}
-                {
-                  userRole === "organisation" && <>
-                    <Button disabled={disableBid} mode="contained" onPress={() => handleBid()} style={{ marginTop: 20, marginVertical: 10, marginHorizontal: 20 }}>
-                      Make Bid
-                    </Button>
-                    <Button mode="contained" onPress={() => outOfRace()} style={{ marginTop: 20, marginVertical: 10, marginHorizontal: 20 }}>
-                      Out Of Race
-                    </Button>
-                  </>
-                }
-                {
-                  userRole == "admin" && <View style={{ gap: "5%", marginTop: 20, marginVertical: 10, marginHorizontal: 20, flexDirection: "row", width: "100%" }}>
-
-                    <Button style={{ width: '42%' }} mode="contained" onPress={() => soldTo()} >
-                      {
-                        !currentBidder ? "Unsold.." : "Sold..."
-                      }
-
-                    </Button>
-                    <Button style={{ width: '42%' }} mode="contained" onPress={() => lastChance()} >
-                      Last Chance
-                    </Button>
-                  </View>
-                }
+                  }
 
 
 
 
-                <Text style={styles.historyTitle}>Bids History:</Text>
-                {bidsHistory.map((bid, index) => (
-                  <Card key={index} style={styles.historyCard}>
-                    <Card.Title
-                      right={() => <Chip style={{ marginRight: 10 }}>{bid.bidAmount}</Chip>}
-                      left={() => <Chip style={{ width: widthPerWidth(50), textAlign: "center" }}>{bid.bidderName}</Chip>}
-                    />
-                  </Card>
-                ))}
+                  <Text style={styles.historyTitle}>Bids History:</Text>
+                  {bidsHistory.map((bid, index) => (
+                    <Card key={index} style={styles.historyCard}>
+                      <Card.Title
+                        right={() => <Chip style={{ marginRight: 10 }}>{bid.bidAmount}</Chip>}
+                        left={() => <Chip style={{ width: widthPerWidth(50), textAlign: "center" }}>{bid.bidderName}</Chip>}
+                      />
+                    </Card>
+                  ))}
 
+                </Card>
+              ) : (
+                <Text>No active player yet.</Text>
+              )}
+            </View>
+          ) : (
+            <View style={styles.container}>
+              <Card style={styles.card}>
+                <Card.Content>
+                  <Title style={styles.title}>Auction Details</Title>
+                  <Paragraph style={styles.paragraph}>
+                    <Text style={styles.label}>Title:</Text> {auctionDetails?.title}
+                  </Paragraph>
+                  <Paragraph style={styles.paragraph}>
+                    <Text style={styles.label}>Description:</Text> {auctionDetails?.description}
+                  </Paragraph>
+                  <Paragraph style={styles.paragraph}>
+                    <Text style={styles.label}>Auction Date:</Text> {new Date(auctionDetails?.auctionDate).toLocaleDateString()}
+                  </Paragraph>
+                  <Paragraph style={styles.paragraph}>
+                    <Text style={styles.label}>Status:</Text> {auctionDetails?.status}
+                  </Paragraph>
+                </Card.Content>
               </Card>
-            ) : (
-              <Text>No active player yet.</Text>
-            )}
-          </View>
-        ) : (
-          <View style={styles.container}>
-            <Card style={styles.card}>
-              <Card.Content>
-                <Title style={styles.title}>Auction Details</Title>
-                <Paragraph style={styles.paragraph}>
-                  <Text style={styles.label}>Title:</Text> {auctionDetails?.title}
-                </Paragraph>
-                <Paragraph style={styles.paragraph}>
-                  <Text style={styles.label}>Description:</Text> {auctionDetails?.description}
-                </Paragraph>
-                <Paragraph style={styles.paragraph}>
-                  <Text style={styles.label}>Auction Date:</Text> {new Date(auctionDetails?.auctionDate).toLocaleDateString()}
-                </Paragraph>
-                <Paragraph style={styles.paragraph}>
-                  <Text style={styles.label}>Status:</Text> {auctionDetails?.status}
-                </Paragraph>
-              </Card.Content>
-            </Card>
 
-            <Text style={styles.noticeText}>Auction Not Started</Text>
-            <Text style={styles.groundText}>You Are In Auction Ground</Text>
+              <Text style={styles.noticeText}>Auction Not Started</Text>
+              <Text style={styles.groundText}>You Are In Auction Ground</Text>
 
-            {userRole === "admin" && (
-              <Button mode="contained" onPress={startAuction} style={styles.button}>
-                Let's Start
-              </Button>
-            )}
-          </View>
-        )
-      }
-    </ScrollView>
+              {userRole === "admin" && (
+                <Button mode="contained" onPress={startAuction} style={styles.button}>
+                  Let's Start
+                </Button>
+              )}
+            </View>
+          )
+        }
+      </ScrollView>
+    </RefreshLayout>
   );
 }
 
@@ -453,6 +459,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 8,
     elevation: 4,
+    width: widthPerWidth(90)
   },
   title: {
     fontSize: 24,
@@ -500,7 +507,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     padding: 10,
-    justifyContent:'center',
+    justifyContent: 'center',
     // alignItems: 'center',
     // backgroundColor: '#f7f7f7'
   },

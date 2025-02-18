@@ -54,13 +54,16 @@ export default function Lists() {
         return "#FFC107";
     }
   }
+  const navToTeam =(item)=>{
+
+  }
 
   const renderPlayer = ({ item }) => (
     <Card style={styles.card} onPress={() => router.push(`playerDetails?playerId=${item._id}`)}>
       <Card.Title
         title={item.name}
         left={(props) => (
-          <Avatar.Image size={50} source={{ uri:`${baseUrl}${item.image}` }} />
+          <Avatar.Image size={50} source={{ uri: `${baseUrl}${item.image}` }} />
         )}
         right={(props) => (
           <>{name !== "Teams" && <View>
@@ -90,7 +93,7 @@ export default function Lists() {
           <Paragraph>
             Wicketkeeper: {item.battingDetails?.isWicketkeeper ? 'Yes' : 'No'}
           </Paragraph>
-      
+
         </Card.Content>}
 
     </Card>

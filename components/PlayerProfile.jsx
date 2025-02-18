@@ -3,29 +3,36 @@ import { StyleSheet, View, ScrollView } from 'react-native';
 import { Avatar, Card, List, Text, Divider } from 'react-native-paper';
 import { getUserDetails } from '../helper/Storage';
 import useAxios, { baseUrl } from '../helper/useAxios';
+import { widthPerWidth } from '../helper/dimensions';
+import PullToRefreshLayout from './layout/PullToRefreshLayout';
+import RefreshLayout from '../helper/RefreshLayout';
+import { useAuth } from '../context/AuthContext';
 
 export default function PlayerProfile() {
   const [playerDetails, setPlayerDetails] = useState(null);
   const [bidDetails, setBidDetails] = useState(null);
+  const {loggedInUser}=useAuth()
   const user = getUserDetails();
   const {fetchData} = useAxios();
 
+  const getPlayer = async () => {
+    const res = await fetchData({
+      url: `/api/players/player/${user._id || loggedInUser._id}`,
+      method: 'GET',
+    });
+    if (res.status) {
+      setPlayerDetails(res.data.player);
+      setBidDetails(res.data.bid);
+    }
+  };
   useEffect(() => {
-    const getPlayer = async () => {
-      const res = await fetchData({
-        url: `/api/players/player/${user._id}`,
-        method: 'GET',
-      });
-      if (res.status) {
-        setPlayerDetails(res.data.player);
-        setBidDetails(res.data.bid);
-      }
-    };
+   
     getPlayer();
   }, []);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+   <RefreshLayout refreshFunction={getPlayer}>
+     <ScrollView contentContainerStyle={styles.container}>
       {/* Profile Card */}
       <Card style={[styles.card, styles.primaryCard]}>
         <Card.Content>
@@ -107,6 +114,7 @@ export default function PlayerProfile() {
         </Card>
       )}
     </ScrollView>
+   </RefreshLayout>
   );
 }
 
@@ -121,6 +129,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 15,
     marginBottom: 15,
+    width:widthPerWidth(90)
   },
   primaryCard: {
     backgroundColor: '#E3F2FD',

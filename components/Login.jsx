@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import useAxios from '../helper/useAxios';
 import useUserDetails from '../hooks/useUserDetails';
+import { getUserProfile } from '../helper/Api';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -21,6 +22,7 @@ export default function Login() {
   const { login } = useAuth();
   const { fetchData, error: apiError } = useAxios();
   const { getMe } = useUserDetails();
+  const {getUser}  = getUserProfile()
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -39,8 +41,12 @@ export default function Login() {
       });
 
       if (res.status) {
-        getMe(res.data.token);
+      const userRes = await getUser(res.data.token)
+      if(userRes.status){
         login(res.data.token, res.data.role);
+      }
+        
+        // getMe(res.data.token);
         showSnackbar(res.message, 'green');
       } else {
         showSnackbar(res.message, 'red');

@@ -4,27 +4,34 @@ import { Card, Title, Paragraph } from 'react-native-paper'
 import { useAuth } from '../../context/AuthContext'
 import ProfilePage from '../../components/Profile'
 import PlayerProfile from '../../components/PlayerProfile'
-import { getUserDetails } from '../../helper/Storage'
+
 
 export default function Profile() {
-  const user = getUserDetails()
-  const { userRole } = useAuth()
-  console.log({ user })
+
+  const { userRole, loggedInUser } = useAuth()
+
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {user ? (
+    <>
+      {loggedInUser ? (
         (userRole === "admin" || userRole === "organisation") ? (
-          <ProfilePage user={user} />
+          <ProfilePage user={loggedInUser} />
         ) : userRole === "player" ? (
           <PlayerProfile />
         ) : (
-          <View>
-            <Text>Invalid User Role</Text>
-          </View>
+       <WithoutLogindata/>
         )
       ) : (
-        <>
+        <WithoutLogindata/>
+      )}
+    </>
+  )
+}
+
+
+const WithoutLogindata =()=>{
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
           {/* Welcome Message */}
           <Card style={styles.card}>
             <Card.Content>
@@ -57,16 +64,13 @@ export default function Profile() {
               </Paragraph>
 
               <Paragraph style={styles.finalNote}>
-                📢 Get ready to experience the thrill of live bidding and competitive gameplay in MPL Shakarpur! 
+                📢 Get ready to experience the thrill of live bidding and competitive gameplay in MPL Shakarpur!
               </Paragraph>
             </Card.Content>
           </Card>
-        </>
-      )}
-    </ScrollView>
+        </ScrollView>
   )
 }
-
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,

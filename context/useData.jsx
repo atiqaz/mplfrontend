@@ -9,7 +9,10 @@ export const ProjectProvider = ({ children }) => {
     const [auctionData, setAuctionData] = useState([])
     const [selectedAuction, setSelectedAuction] = useState("")
     const [isAuctionStarted, setIsAuctionStarted] = useState(false)
+    const [auctionDetaileddata,setAuctionDetaileddata]=useState([])
     const {mydetails, userRole}= useAuth()
+    const [started, setStarted]=useState(false)
+    const [selectedInternalAuction, setselectedInternalAuction] = useState(null);
     
     const project = {
         title: "My Project",
@@ -28,6 +31,7 @@ export const ProjectProvider = ({ children }) => {
         })
         console.log({data})
         if (status) {
+            setAuctionDetaileddata(data)
             const _data = data.map((x) => {
                 return {
                     label: x.title || "",
@@ -54,7 +58,10 @@ export const ProjectProvider = ({ children }) => {
 
     return (
         <projectData.Provider value={{ project,setAuctionData, auctionData, selectedAuction, setSelectedAuction,
-        isAuctionStarted, setIsAuctionStarted
+        isAuctionStarted, setIsAuctionStarted ,
+        auctionDetaileddata,
+        started, setStarted,
+        selectedInternalAuction, setselectedInternalAuction
          }}>
             {children}
         </projectData.Provider>

@@ -10,6 +10,8 @@ export const AuthProvider = ({ children }) => {
     const [userToken, setUserToken] = useMMKVString('userToken');
     const [userRole, setUserRole] = useMMKVString('userRole');
     const [mydetails, setMyDetails] = useMMKVString('me');
+    const [loggedInUser,setLoggedInUser]=useState({})
+    
     const navigation = useNavigation()
     
     const login = (token, role) => {
@@ -20,6 +22,7 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         setUserToken("")
         setIsLoggedIn(false);
+        setLoggedInUser({})
         setUserRole('')
         clearKey('me')
         router.replace('auth')
@@ -27,6 +30,9 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
        if(isLoggedIn){
+        if(mydetails){
+            setLoggedInUser(JSON.parse(mydetails))
+        }
         //    navigation.navigate('(home)')
         router.replace('(home)')
         } 
@@ -34,7 +40,8 @@ export const AuthProvider = ({ children }) => {
     return (
         <AuthContext.Provider value={{ isLoggedIn, login, logout,userToken, setUserToken ,
         userRole, setUserRole,
-        mydetails, setMyDetails
+        mydetails, setMyDetails,
+        loggedInUser,setLoggedInUser
          }}>
             {children}
         </AuthContext.Provider>

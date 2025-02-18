@@ -17,13 +17,14 @@ export default function ListsAuctions({ setStarted, selectedInternalAuction, set
     const [formData, setFormData] = useState({ title: '', description: '', auctionDate: new Date(), status: 'Pending' });
     const [showDatePicker, setShowDatePicker] = useState(false);
 
+    const getData = async () => {
+        const res = await fetchData({ url: '/api/auction/allauction', method: 'GET' });
+        if (res.status) {
+            setAuctions(res.data);
+        }
+    };
     useEffect(() => {
-        const getData = async () => {
-            const res = await fetchData({ url: '/api/auction/allauction', method: 'GET' });
-            if (res.status) {
-                setAuctions(res.data);
-            }
-        };
+      
         getData();
     }, []);
 
@@ -50,7 +51,9 @@ export default function ListsAuctions({ setStarted, selectedInternalAuction, set
     const handleStartAuction = () => {
         setModalVisible(false);
         setStarted(true);
-        socket.emit('start:auction', { start: true, roomId: selectedInternalAuction.roomId, auctionId: selectedInternalAuction._id });
+        const payload ={ start: true, roomId: selectedInternalAuction.roomId, auctionId: selectedInternalAuction._id }
+        console.log('start:auction emitted',payload)
+        socket.emit('start:auction', payload);
     };
 
     const renderAuctionItem = ({ item }) => (

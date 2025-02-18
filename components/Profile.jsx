@@ -1,18 +1,38 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, ImageBackground, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, Button, Card, Avatar, Paragraph, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { router } from 'expo-router';
+import RefreshLayout from '../helper/RefreshLayout';
+import { getUserProfile } from '../helper/Api';
 
 const ProfilePage = (props) => {
     const { user } = props
-    const {logout}=useAuth()
+    const {logout ,userToken}=useAuth()
+     const {getUser}  = getUserProfile()
+
+    const getBg =(status)=>{
+        if(status==="accepted"){
+            return 'green'
+        }else if(status==="rejected"){
+            return 'red'
+        } else {
+            return 'orange'
+        }
+    }
+    useEffect(()=>{
+        getUser(userToken)
+    },[])
+
+    const getuserDet = ()=>{
+        getUser(userToken)
+    }
+
+
     return (
-        <ImageBackground
-            source={{ uri: 'https://example.com/background-image.jpg' }}
-            style={styles.background}
-        >
+      <RefreshLayout  refreshFunction={getuserDet}>
+        
             <ScrollView contentContainerStyle={styles.scrollContainer}  
                 showsVerticalScrollIndicator={false}
             >
@@ -30,6 +50,7 @@ const ProfilePage = (props) => {
                     <Card.Content>
                         <Text style={styles.cardTitle}>User Information</Text>
                         <View style={styles.infoContainer}>
+                        
                             <MaterialCommunityIcons name="account" size={20} color="gray" />
                             <Paragraph style={styles.infoText}>{user.name}</Paragraph>
                         </View>
@@ -37,6 +58,19 @@ const ProfilePage = (props) => {
                             <MaterialCommunityIcons name="email" size={20} color="gray" />
                             <Paragraph style={styles.infoText}>{user.email}</Paragraph>
                         </View>
+                        {user.role=="organisation" && <View style={[styles.infoContainer,{
+                            backgroundColor:getBg(user.status),
+                            borderRadius:10,
+                            padding:5,
+                            paddingLeft:10
+                        }]}>
+                            <MaterialCommunityIcons name="status" size={20} color="gray" />
+                            <Paragraph style={[styles.infoText,{
+                                color:"white",
+                                textTransform:"uppercase"
+                            }]}>{user.status}</Paragraph>
+                        </View> }
+                         
                     </Card.Content>
                 </Card>
 
@@ -100,7 +134,8 @@ const ProfilePage = (props) => {
                     Logout
                 </Button>
             </ScrollView>
-        </ImageBackground>
+ 
+      </RefreshLayout>
     );
 };
 
@@ -152,6 +187,7 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         fontSize: 16,
         color: '#333',
+
     },
     statsContainer: {
         flexDirection: 'row',

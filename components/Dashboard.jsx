@@ -24,6 +24,7 @@ export default function Dashboard({ dashboard }) {
                     <Title style={styles.cardTitle}>{item.title}</Title>
                     <Paragraph style={styles.cardValue}>{item.value}</Paragraph>
                 </Card.Content>
+                
             </Card>
         </TouchableOpacity>
     );
@@ -43,6 +44,8 @@ const styles = StyleSheet.create({
     grid: {
         padding: 10,
         justifyContent: 'space-between',
+        // backgroundColor:"green", 
+        marginTop:0
     },
     card: {
         flex: 1,

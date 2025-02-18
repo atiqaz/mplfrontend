@@ -8,7 +8,7 @@ import { useMMKVString } from 'react-native-mmkv'
 export default function useUserDetails(msg) {
 
     const { fetchData } = useAxios()
-    const { userToken ,mydetails, setMyDetails } = useAuth()
+    const { userToken ,mydetails, setMyDetails,loggedInUser,setLoggedInUser } = useAuth()
 
     
 
@@ -25,7 +25,7 @@ export default function useUserDetails(msg) {
             })
             console.log('userDetails',data, status)
             if(status){
-                console.log(data)
+                setLoggedInUser(data)
                 setMyDetails(JSON.stringify(data))
             }
 

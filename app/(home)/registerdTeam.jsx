@@ -16,6 +16,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import useAxios, { baseUrl } from "../../helper/useAxios";
 import Header from "../../components/Header";
 import { useData } from "../../context/useData";
+import RefreshLayout from "../../helper/RefreshLayout";
 
 export default function TeamList() {
   const [teams, setTeams] = useState([]);
@@ -37,7 +38,7 @@ export default function TeamList() {
       method: "GET",
     });
     setLoading(false);
-
+console.log(`/api/users?auctionId=${selectedAuction}`,res)
     if (res.status) {
       setTeams(res.data);
     }
@@ -124,7 +125,7 @@ export default function TeamList() {
   };
 
   return (
-    <Provider>
+    <RefreshLayout refreshFunction={getTeam}>
       <View style={styles.container}>
         <Header title={"Registered Team"} />
 
@@ -249,12 +250,12 @@ export default function TeamList() {
           {snackbarMessage}
         </Snackbar>
       </View>
-    </Provider>
+    </RefreshLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#f5f5f5" },
+  container: { padding: 16, backgroundColor: "#f5f5f5" },
   purseText: { fontSize: 16, fontWeight: "bold", marginTop: 5 },
   actions: { justifyContent: "space-between" },
   modalContainer: { backgroundColor: "white", padding: 20, borderRadius: 10 },
