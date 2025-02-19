@@ -10,11 +10,6 @@ import * as ImagePicker from 'expo-image-picker';
 
 export default function PlayerRegistration() {
 
-    const OPTIONS = [
-        { label: '1000', value: 1000 },
-        { label: '1500', value: 1500 },
-        { label: '2000', value: 2000 },
-    ];
     const initialFormData = {
         name: '',
         age: '',
@@ -32,34 +27,19 @@ export default function PlayerRegistration() {
             bowlingStyle: '', // 'Right Arm Fast', 'Left Arm Spinner', etc.
         },
         basePrice: 1000, // Default base price
-        auctionId: '', // Selected auction ID
+        
     };
 
     const [formData, setFormData] = useState(initialFormData);
-    const [auctionData, setAuctionData] = useState([])
+
     const [showpassword, setShowPassword] = useState(false)
 
     const [basePrice, setBasePrice] = useState(1000)
     const [RunningAuction, setRunningAuction] = useState('')
     const { fetchData, error, loading } = useAxios();
     const [image, setImage] = useState('')
-    const getAuctionLists = async () => {
-        const res = await fetchData({
-            url: '/api/auction',
-            method: 'GET',
-        })
-        const resData = res.data.map((x) => {
-            return {
-                label: x.title,
-                value: x._id,
-            }
-        })
-        setAuctionData(resData)
-    }
-
-    useEffect(() => {
-        getAuctionLists();
-    }, []);
+   
+  
 
     useEffect(() => {
         if (error) {
@@ -102,7 +82,7 @@ export default function PlayerRegistration() {
     };
 
     const handleSubmit = async () => {
-        const { name, age, phone, email, playerRole, battingDetails, bowlingDetails, imageUrl } = formData;
+       
 
         const payload = { ...formData, auctionId: RunningAuction }
         const { data, message, status } = await fetchData({
@@ -274,7 +254,7 @@ export default function PlayerRegistration() {
 
 
             {/* Image URL */}
-            <Divider style={styles.divider} />
+            {/* <Divider style={styles.divider} />
             <Dropdown
                 label="Base Price"
                 placeholder="Select Base Price"
@@ -291,7 +271,7 @@ export default function PlayerRegistration() {
                 value={RunningAuction}
                 onSelect={setRunningAuction}
 
-            />
+            /> */}
 
             {/* Submit Button */}
             <Button

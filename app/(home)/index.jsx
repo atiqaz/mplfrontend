@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, Text, FlatList } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Text, FlatList, Platform, SafeAreaView, ScrollView } from 'react-native';
 import Dashboard from '../../components/Dashboard';
 import { useAuth } from '../../context/AuthContext';
 import useAxios, { baseUrl } from '../../helper/useAxios';
-import { Appbar, Avatar, Button, Card, Menu, TextInput } from 'react-native-paper';
+import { AnimatedFAB, Appbar, Avatar, Button, Card, Menu, SegmentedButtons, TextInput } from 'react-native-paper';
 import { getUserDetails } from '../../helper/Storage';
 import { useSocket } from '../../context/socketContext';
 import { Dropdown } from 'react-native-paper-dropdown';
@@ -14,11 +14,18 @@ import PullToRefreshLayout from '../../components/layout/PullToRefreshLayout';
 import { useSnackbar } from '../../context/useSnackBar';
 import { Drawer } from 'react-native-paper';
 import HomePage from '../../components/HomePage';
+import CreateAuctionModal from '../../components/CreateAuctionModal';
 
 // Import Common Layout
 // import PullToRefreshLayout from '../../components/PullToRefreshLayout';
 
-export default function Home() {
+export default function Home({ animatedValue,
+  visible,
+  extended,
+  label,
+  animateFrom,
+  style,
+  iconMode, }) {
   const [dashboard, setDashboard] = useState({});
   const { fetchData } = useAxios();
   const { logout, userRole, mydetails, loggedInUser, setLoggedInUser, isLoggedIn } = useAuth();
@@ -100,9 +107,38 @@ export default function Home() {
     setSearchQuery('');
   };
 
+  // ---------------------Fab-------------------
+  const [isExtended, setIsExtended] = React.useState(true);
+
+  const isIOS = Platform.OS === 'ios';
+
+  const onScroll = ({ nativeEvent }) => {
+    const currentScrollPosition =
+      Math.floor(nativeEvent?.contentOffset?.y) ?? 0;
+
+    setIsExtended(currentScrollPosition <= 0);
+  };
+  const fabStyle = { [animateFrom]: 16 };
+  // --------------------FAB End--------------------
+
+  // -----------------Modal for Create Auction------------------
+  const [modalVisible, setModalVisible] = useState(false);
+
+
+  //  -----------------segmented buttons------------------
+  const [value, setValue] = React.useState('');
+
+  // -------------------------data-------------------
+
   return (
-    <PullToRefreshLayout refreshFunction={getAllData}>
-      <Appbar.Header mode="center-aligned" elevated={false} style={{marginLeft:10}}>
+
+    <ScrollView contentContainerStyle={{
+      flexGrow: 1,
+      backgroundColor: 'white',
+      padding: 10,
+      paddingBottom: 0,
+    }}>
+      <Appbar.Header mode="center-aligned" elevated={false} style={{ marginLeft: 10 }}>
         {isSearching ? (
           <TextInput
             style={styles.searchInput}
@@ -113,7 +149,7 @@ export default function Home() {
           />
         ) : (
           <Appbar.Content
-            title={'Search'.toUpperCase()}
+            title={isLoggedIn ? `Hi!  ${loggedInUser.name}` : 'Search'.toUpperCase()}
             titleStyle={{ fontSize: 15, fontWeight: 'bold' }}
           />
         )}
@@ -129,97 +165,104 @@ export default function Home() {
         {isLoggedIn && <Appbar.Action
           icon={'logout'}
           onPress={logout}
-        /> }
-        
+        />}
 
       </Appbar.Header>
       <>
-      {
-        isSearching ? <HomePage
-          isSearching={isSearching}
-          setIsSearching={setIsSearching}
-          _toggleSearch={_toggleSearch}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-        /> : <View style={{
-          justifyContent: "center",
-          alignItems: "center",
-          paddingTop: 30,
-          backgroundColor: "#f5f5f5",
-          paddingHorizontal: 10,
-          marginBottom: 10,
-          height: heightPerHeight(95)
-        }}>
-          <Text>
-            Welcome to Home Page
-          </Text>
-
-        </View>
-      }</>
-      {/* <Appbar.Header style={styles.appbar}>
-        <View style={styles.dropdownContainer}>
-          <Dropdown
-            label="Select Events"
-            placeholder="Select Events"
-            options={auctionData || []}
-            value={selectedAuction || ""}
-            onSelect={setSelectedAuction}
-          />
-        </View>
-        {userRole ? (
-          <View style={styles.userSection}>
-            <Menu
-              visible={menuVisible}
-              onDismiss={() => setMenuVisible(false)}
-              anchor={
-                <Avatar.Image
-                  size={45}
-                  source={{ uri: loggedInUser?.image ? `${baseUrl}${loggedInUser.image}` : "https://via.placeholder.com/150" }}
-                  style={styles.avatar(isConnected)}
-                  onTouchEnd={() => setMenuVisible(true)}
-                />
-              }
+        {
+          isSearching ? <HomePage
+            isSearching={isSearching}
+            setIsSearching={setIsSearching}
+            _toggleSearch={_toggleSearch}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+          /> : <View >
+            {userRole == "admin" && <> <AnimatedFAB
+              icon={'plus'}
+              label={'Create Auction'}
+              extended={isExtended}
+              onPress={() => setModalVisible(true)}
+              visible={visible}
+              animateFrom={'right'}
+              iconMode={'dynamic'}
+              style={[styles.fabStyle, style, fabStyle]}
             />
-            <TouchableOpacity>
-              <Button icon={'logout'} labelStyle={styles.logoutIcon} onPress={logout} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <Button onPress={() => router.push('auth')} mode="contained">
-            <Text>Login</Text>
-          </Button>
-        )}
-      </Appbar.Header> */}
+              {modalVisible && <CreateAuctionModal
+                modalVisible={modalVisible}
+                setModalVisible={setModalVisible}
+              />}</>}
 
-      {/* Dashboard Content */}
-      {/* <FlatList
-        data={liveAuction}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.auctionItem} onPress={() => enterInRoom(item)}>
-            <Card mode='elevated'>
-              <Card.Content>
-              <Card.Title title={`🟢${item.title}`} subtitle={item.description}  titleStyle={{
-                fontSize: 18,
-                fontWeight: 'bold',
-                marginBottom: 5
-              }}/>
-              </Card.Content>
-           
-            </Card>
-          </TouchableOpacity>
-        )}
-        ListHeaderComponent={
-          <View style={styles.listHeader}>
-            <Text style={styles.listTitle}> 🟢 Live Auctions</Text>
-          </View>
-        }
-        contentContainerStyle={styles.auctionLists}
 
-        showsVerticalScrollIndicator={false}
-      />
-      <Dashboard dashboard={dashboard} /> */}
-    </PullToRefreshLayout>
+            {/* -----------------------Segmented Buttons---------------------------- */}
+            <Text style={{
+              fontSize: 18,
+              fontWeight: 'bold',
+              marginBottom: 10,
+              marginTop: 20,
+              marginLeft: 15,
+            }}>Auctions</Text>
+
+            <SegmentedButtons
+              value={value}
+              onValueChange={setValue}
+              buttons={[
+                {
+                  value: 'live',
+                  label: '🟢 Live',
+
+                },
+                {
+                  value: 'upcoming',
+                  label: 'Upcoming',
+                },
+                { value: 'finished', label: 'Finished' },
+              ]}
+            />
+            {/* ------------------------------------------ your Auctions--------------------- */}
+            <Text>{JSON.stringify(loggedInUser)}</Text>
+            <Text style={{
+              fontSize: 18,
+              fontWeight: 'bold',
+              marginBottom: 10,
+              marginTop: 20,
+              marginLeft: 15,
+            }}>Your Auctions</Text>
+
+            {userRole === "organisation" && <>
+              {loggedInUser?.auctions.length ? <>
+
+              </> : <>
+                <Text style={{
+                  fontSize: 15,
+                  fontWeight: 'bold',
+                  textAlign: "center", color: 'orange'
+                }}> You have Not Participated</Text>
+                <Button
+                  mode="contained"
+                
+                  style={{
+                    marginTop: 20,
+                    width: widthPerWidth(70),
+                    alignSelf: 'center',
+                    
+                  }}
+                  onPress={() => {
+                    router.push('allAuctions')
+                  }}
+                >
+                  Participate
+                </Button>
+              </>}
+            </>}
+
+
+
+
+          </View>
+        }</>
+    </ScrollView>
+
+
   );
 }
 
@@ -235,6 +278,11 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   dropdownContainer: { width: widthPerWidth(65), marginRight: 15 },
+  fabStyle: {
+    bottom: 16,
+    right: 16,
+    position: 'absolute',
+  },
   userSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',

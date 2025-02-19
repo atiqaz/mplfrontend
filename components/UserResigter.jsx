@@ -21,22 +21,7 @@ const UserForm = () => {
   const [image,setImage]=useState('')
   const { fetchData, data, loading } = useAxios();
 
-  const getAuctionLists = async () => {
-    const res = await fetchData({
-      url: '/api/auction',
-      method: 'GET',
-    })
-    const resData = res.data.map((x) => {
-      return {
-        label: x.title,
-        value: x._id,
-      }
-    })
-    setAuctionData(resData)
-  }
-  useEffect(() => {
-    getAuctionLists()
-  }, [])
+
 
   const pickImageAsync = async () => {
           let result = await ImagePicker.launchImageLibraryAsync({
@@ -55,7 +40,7 @@ const UserForm = () => {
         };
 
   const handleSubmit = async () => {
-    if (!name || !phone || !email || !password || !RunningAuction) {
+    if (!name || !phone || !email || !password ) {
       setMessage('Please fill in all the required fields');
       setIsError(true);
       setVisible(true);
@@ -178,14 +163,7 @@ const UserForm = () => {
         secureTextEntry
         style={styles.input}
       />
-      <Dropdown
-        label="Auction Lists"
-        placeholder="Select Auction List"
-        options={auctionData}
-        value={RunningAuction}
-        onSelect={setRunningAuction}
-
-      />
+     
       <Button
         mode="contained"
         onPress={handleSubmit}

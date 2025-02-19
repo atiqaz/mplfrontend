@@ -4,14 +4,14 @@ import { Appbar, TextInput } from 'react-native-paper';
 import useAxios from '../helper/useAxios';
 import { router } from 'expo-router';
 
-export default function HomePage({isSearching, setIsSearching,searchQuery, setSearchQuery ,_toggleSearch}) {
+export default function HomePage({ isSearching, setIsSearching, searchQuery, setSearchQuery, _toggleSearch }) {
 
     // const [searchQuery, setSearchQuery] = useState('');
     const [players, setPlayers] = useState([]); // Store fetched players
     const { fetchData } = useAxios();
     const name = 'Search';
 
-   
+
 
     const getData = async () => {
         try {
@@ -48,7 +48,7 @@ export default function HomePage({isSearching, setIsSearching,searchQuery, setSe
 
     return (
         <View style={styles.container}>
-            
+
             {/* <Text>{players.length}</Text> */}
 
             {/* Players List */}
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
         // flex: 1,
         backgroundColor: '#fff',
     },
-   
+
     card: {
         flexDirection: 'row',
         alignItems: 'center',

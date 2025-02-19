@@ -74,6 +74,12 @@ function MainLayoutProvider() {
                         headerShown: false,
                     }}
                 />
+                <Stack.Screen
+                    name="allAuctions"
+                    options={{
+                        headerShown: false,
+                    }}
+                />
             </Stack>
             <StatusBar style="light" />
         </>
