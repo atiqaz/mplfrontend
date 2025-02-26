@@ -22,7 +22,7 @@ export default function Login() {
   const { login } = useAuth();
   const { fetchData, error: apiError } = useAxios();
   const { getMe } = useUserDetails();
-  const {getUser}  = getUserProfile()
+  const { getUser } = getUserProfile()
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -41,11 +41,11 @@ export default function Login() {
       });
 
       if (res.status) {
-      const userRes = await getUser(res.data.token)
-      if(userRes.status){
-        login(res.data.token, res.data.role);
-      }
-        
+        const userRes = await getUser(res.data.token)
+        if (userRes.status) {
+          login(res.data.token, res.data.role);
+        }
+
         // getMe(res.data.token);
         showSnackbar(res.message, 'green');
       } else {

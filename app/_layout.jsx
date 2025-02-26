@@ -77,7 +77,31 @@ function MainLayoutProvider() {
                 <Stack.Screen
                     name="allAuctions"
                     options={{
-                        headerShown: false,
+                        title:"Auctions",
+                        headerShown: true,
+                    }}
+                />
+                <Stack.Screen
+                    name="singleAuction"
+
+                    options={{
+                        title:"Auction",
+                        headerShown: true,
+                    }}
+                /><Stack.Screen
+                    name="teams"
+
+                    options={{
+                        title:"Teams",
+                        headerShown: true,
+                    }}
+                />
+                <Stack.Screen
+                    name="players"
+
+                    options={{
+                        title:"Players",
+                        headerShown: true,
                     }}
                 />
             </Stack>

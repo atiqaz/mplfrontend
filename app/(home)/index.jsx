@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, Text, FlatList, Platform, SafeAreaView, ScrollView } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Text, FlatList, Platform, SafeAreaView, ScrollView, Image } from 'react-native';
 import Dashboard from '../../components/Dashboard';
 import { useAuth } from '../../context/AuthContext';
 import useAxios, { baseUrl } from '../../helper/useAxios';
@@ -9,12 +9,13 @@ import { useSocket } from '../../context/socketContext';
 import { Dropdown } from 'react-native-paper-dropdown';
 import { useData } from '../../context/useData';
 import { heightPerHeight, widthPerWidth } from '../../helper/dimensions';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import PullToRefreshLayout from '../../components/layout/PullToRefreshLayout';
 import { useSnackbar } from '../../context/useSnackBar';
 import { Drawer } from 'react-native-paper';
 import HomePage from '../../components/HomePage';
 import CreateAuctionModal from '../../components/CreateAuctionModal';
+import AdminDashBoard from '../../components/admin/AdminDashBoard';
 
 // Import Common Layout
 // import PullToRefreshLayout from '../../components/PullToRefreshLayout';
@@ -129,7 +130,7 @@ export default function Home({ animatedValue,
   const [value, setValue] = React.useState('');
 
   // -------------------------data-------------------
-
+  const navigation = useNavigation()
   return (
 
     <ScrollView contentContainerStyle={{
@@ -149,7 +150,7 @@ export default function Home({ animatedValue,
           />
         ) : (
           <Appbar.Content
-            title={isLoggedIn ? `Hi!  ${loggedInUser.name}` : 'Search'.toUpperCase()}
+            title={isLoggedIn ? `Hi!  ${loggedInUser.name}` : 'Search Player..'.toUpperCase()}
             titleStyle={{ fontSize: 15, fontWeight: 'bold' }}
           />
         )}
@@ -177,59 +178,93 @@ export default function Home({ animatedValue,
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
           /> : <View >
-            {userRole == "admin" && <> <AnimatedFAB
-              icon={'plus'}
-              label={'Create Auction'}
-              extended={isExtended}
-              onPress={() => setModalVisible(true)}
-              visible={visible}
-              animateFrom={'right'}
-              iconMode={'dynamic'}
-              style={[styles.fabStyle, style, fabStyle]}
-            />
+            {userRole == "admin" && <>
+              <AdminDashBoard />
+              <AnimatedFAB
+                icon={'plus'}
+                label={'Create Auction'}
+                extended={isExtended}
+                onPress={() => setModalVisible(true)}
+                visible={visible}
+                animateFrom={'right'}
+                iconMode={'dynamic'}
+                style={[styles.fabStyle, style, fabStyle]}
+              />
               {modalVisible && <CreateAuctionModal
                 modalVisible={modalVisible}
                 setModalVisible={setModalVisible}
               />}</>}
 
 
-            {/* -----------------------Segmented Buttons---------------------------- */}
-            <Text style={{
-              fontSize: 18,
-              fontWeight: 'bold',
-              marginBottom: 10,
-              marginTop: 20,
-              marginLeft: 15,
-            }}>Auctions</Text>
 
-            <SegmentedButtons
-              value={value}
-              onValueChange={setValue}
-              buttons={[
-                {
-                  value: 'live',
-                  label: '🟢 Live',
 
-                },
-                {
-                  value: 'upcoming',
-                  label: 'Upcoming',
-                },
-                { value: 'finished', label: 'Finished' },
-              ]}
-            />
             {/* ------------------------------------------ your Auctions--------------------- */}
-            <Text>{JSON.stringify(loggedInUser)}</Text>
-            <Text style={{
-              fontSize: 18,
-              fontWeight: 'bold',
-              marginBottom: 10,
-              marginTop: 20,
-              marginLeft: 15,
-            }}>Your Auctions</Text>
+            {/* <Text>{JSON.stringify(loggedInUser)}</Text> */}
 
-            {userRole === "organisation" && <>
+
+            {(userRole === "organisation" || userRole === "player") && <>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: 'bold',
+                marginBottom: 10,
+                marginTop: 20,
+                marginLeft: 15,
+              }}>Your Auctions {userRole}</Text>
               {loggedInUser?.auctions.length ? <>
+                <FlatList
+                  data={loggedInUser?.auctions}
+                  keyExtractor={(item) => item.value}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity onPress={() => navigation.navigate(`singleAuction`, {
+                      auctionId: item?.auctionId._id
+                    })}>
+                      <Card style={styles.auctionLists}>
+                        {/* <Text>{JSON.stringify(item)}</Text> */}
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '80%' }}>
+                          <Card.Title style={{ fontWeight: "800" }} title={item?.auctionId?.title} />
+                          <Image
+                            source={require('../../assets/liveAuction.gif')}
+                            style={{
+                              width: 60,
+                              height: 30,
+                              borderRadius: 10,
+                              marginBottom: 10,
+                              // scaleX: .5,
+                            }}
+                            fadeDuration={1000}
+                            resizeMode="contain"
+                          // onLoadStart={() => console.log('Load start')}
+                          />
+                        </View>
+                        <Card.Content>
+
+                          <Text style={styles.dateText}>
+                            Auction Date: {new Date(item.auctionId.auctionDate).toLocaleString()}
+                          </Text>
+
+                        </Card.Content>
+                      </Card>
+                    </TouchableOpacity>
+                  )}
+                  ListFooterComponent={() => <TouchableOpacity style={{
+
+                  }}>
+                    <Button mode="contained"
+                      color="#ff6600"
+                      style={{
+                        marginTop: 20,
+                        // width: widthPerWidth(70),
+                        alignSelf: 'center',
+                      }}
+                      onPress={() => {
+                        router.push('allAuctions')
+                      }}
+
+                    >
+                      Participate New auction
+                    </Button>
+                  </TouchableOpacity>}
+                />
 
               </> : <>
                 <Text style={{
@@ -239,12 +274,12 @@ export default function Home({ animatedValue,
                 }}> You have Not Participated</Text>
                 <Button
                   mode="contained"
-                
+
                   style={{
                     marginTop: 20,
                     width: widthPerWidth(70),
                     alignSelf: 'center',
-                    
+
                   }}
                   onPress={() => {
                     router.push('allAuctions')
@@ -254,7 +289,29 @@ export default function Home({ animatedValue,
                 </Button>
               </>}
             </>}
-
+            {!isLoggedIn && <View>
+              <Text style={styles.whoLooking}>What Are You Looking For?</Text>
+              <View style={styles.all}>
+                <Card style={styles.oneCard}>
+    
+                  <Card.Title title="Players"  titleStyle={{
+                    textAlign:"center",
+                    fontWeight:"800",
+                    fontSize:20
+                  }}
+                    />
+                </Card>
+                <Card style={styles.oneCard}>
+              
+                  <Card.Title title="All Teams"  titleStyle={{
+                    textAlign:"center",
+                    fontWeight:"800",
+                    fontSize:20
+                  }}
+                    />
+                </Card>
+              </View>
+            </View>}
 
 
 
@@ -303,5 +360,35 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10
+  },
+  auctionLists: {
+    marginHorizontal: 10,
+    marginVertical: 10,
+    // width: widthPerWidth(),
+  },
+  fabStyle: {
+    top: heightPerHeight(75),
+    right: 16,
+    position: 'absolute',
+    // backgroundColor: 'blue',
+    // opacity: 0.5,
+    // transform: [{ translateX: 100 }]
+  },
+  whoLooking: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    marginTop: 20,
+    marginLeft: 15,
+    textAlign: "center"
+  },
+  all:{
+    flex: 1,
+    flexDirection:"row",
+    justifyContent:"space-between"
+ 
+  },
+  oneCard:{
+    width:'48%'
   }
 });

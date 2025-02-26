@@ -1,13 +1,17 @@
 import * as React from 'react';
-import { SafeAreaView, StyleSheet, FlatList, Text, View } from 'react-native';
+import { SafeAreaView, StyleSheet, FlatList, Text, View, TouchableOpacity } from 'react-native';
 import { SegmentedButtons, Card, Button } from 'react-native-paper';
 import useAxios from '../helper/useAxios';
 import { widthPerWidth } from '../helper/dimensions';
 import { useAuth } from '../context/AuthContext';
+import { isAuctionJoined } from '../helper/functions';
+import { getUserProfile } from '../helper/Api';
+import { useNavigation } from 'expo-router';
 
 const MyComponent = () => {
     const [value, setValue] = React.useState('upcoming');
-    const { logout, userRole, mydetails, loggedInUser, setLoggedInUser, isLoggedIn } = useAuth();
+    const { logout, userRole, mydetails, loggedInUser, setLoggedInUser, isLoggedIn, userToken } = useAuth();
+    const { getUser } = getUserProfile()
     const { fetchData } = useAxios();
     const [allData, setAllData] = React.useState([]);
     const [loading, setLoading] = React.useState(false);
@@ -26,20 +30,50 @@ const MyComponent = () => {
         getAllAuctions();
     }, [value]);
 
-const participate =async(item)=>{
-if(userRole=="organisation"){
-    const {data,status} = await fetchData({
-        url: `/api/users/participte/${loggedInUser._id}`,
-        method: 'POST',
-        data:{
-            auctionId:item._id
+    const participate = async (item) => {
+        if (userRole == "organisation") {
+            const { data, status } = await fetchData({
+                url: `/api/users/participte/${loggedInUser._id}`,
+                method: 'POST',
+                data: {
+                    auctionId: item._id
+                }
+            })
+
+            console.log({ data })
+            if (status) {
+                getAllAuctions()
+                getUser(userToken)
+            }
+
         }
-    })
-    console.log(data)
+        if (userRole == 'player') {
+            const { data, status } = await fetchData({
+                url: `/api/players/player/update/${loggedInUser._id}/auctions`,
 
-}
-}
+                method: 'PATCH',
+                data: {
+                    auctionIds: item._id
+                }
+            })
+            console.log({ data })
+            if (status) {
+                getAllAuctions()
+                getUser(userToken)
+            }
+        }
+    }
+    const showButton = () => {
+        if (isLoggedIn) {
+            if (userRole == "organisation" || userRole == "player") {
+                return true
+            }
+            return false
+        }
+        return false
+    }
 
+    const navigation = useNavigation()
     return (
         <SafeAreaView style={styles.container}>
             {/* Segmented Buttons for Filter */}
@@ -60,20 +94,31 @@ if(userRole=="organisation"){
                 <FlatList
                     data={allData}
                     keyExtractor={(item) => item._id}
-                    renderItem={({ item }) => (
-                        <Card style={styles.card}>
-                            <Card.Title title={item.title} />
-                            <Card.Content>
-                                <Text>{item.description}</Text>
-                                <Text style={styles.dateText}>
-                                    Auction Date: {new Date(item.auctionDate).toLocaleString()}
-                                </Text>
-                               {isLoggedIn &&  <Card.Actions>
-                                <Button onPress={()=>participate(item)}>Participate</Button>
-                                </Card.Actions>}
-                            </Card.Content>
-                        </Card>
-                    )}
+                    renderItem={({ item }) => {
+                        const isjoined = isAuctionJoined(loggedInUser, item)
+                        return (
+                            <TouchableOpacity onPress={() => navigation.navigate(`singleAuction`, {
+                                auctionId: item._id
+                            })}>
+                                <Card style={[styles.card, {
+                                    backgroundColor: isjoined ? '#D8E0D2' : '#ffffff',
+
+
+                                }]}>
+                                    <Card.Title title={item.title} />
+                                    <Card.Content>
+                                        <Text>{item.description}</Text>
+                                        <Text style={styles.dateText}>
+                                            Auction Date: {new Date(item.auctionDate).toLocaleString()}
+                                        </Text>
+                                        {showButton() && <Card.Actions >
+                                            <Button disabled={isjoined} onPress={() => participate(item)}>{isjoined ? "Participated" : "participate"}</Button>
+                                        </Card.Actions>}
+                                    </Card.Content>
+                                </Card>
+                            </TouchableOpacity>
+                        )
+                    }}
                 />
             ) : (
                 <View style={styles.noDataContainer}>
@@ -89,7 +134,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
-        paddingTop: 60,
+        paddingTop: 20,
         paddingHorizontal: 10,
     },
     loadingText: {
