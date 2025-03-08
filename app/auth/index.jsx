@@ -1,9 +1,11 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Login from '../../components/Login';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 export default function HomeScreen() {
   return (
     <View style={styles.container}>
+    
     <Login/>
     </View>
   );

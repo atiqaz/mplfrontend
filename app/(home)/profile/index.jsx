@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View, ScrollView } from 'react-native'
 import React from 'react'
 import { Card, Title, Paragraph } from 'react-native-paper'
-import { useAuth } from '../../context/AuthContext'
-import ProfilePage from '../../components/Profile'
-import PlayerProfile from '../../components/PlayerProfile'
+import { useAuth } from '../../../context/AuthContext'
+import ProfilePage from '../../../components/Profile'
+import PlayerProfile from '../../../components/PlayerProfile'
 
 
 export default function Profile() {

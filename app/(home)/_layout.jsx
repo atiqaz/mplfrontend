@@ -9,21 +9,17 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { useSocket } from '../../context/socketContext';
 import { getUserDetails } from '../../helper/Storage';
 import { useAuth } from '../../context/AuthContext';
+import { Button } from 'react-native-paper';
+import { router } from 'expo-router';
+import HomeDrawer from '../../components/layout/HomeDrawer/HomeDrawer';
 export default function _layout() {
-    const {socket} = useSocket()
-const user= getUserDetails()
-const {userRole}=useAuth()
-console.log(user)
+    const { socket } = useSocket()
+    const user = getUserDetails()
+    const { userRole, isLoggedIn } = useAuth()
+    if (!isLoggedIn) {
+        return <HomeDrawer />
 
-    // useEffect(() => {
-    //     if(socket){
-    //         socket.emi('onlineUsers', (userId) => {
-    //             console.log('users is Online', userId)
-    //         })
-            
-    //     }
-    // },[socket])
-
+    }
     return (
 
         <Tabs>
@@ -33,12 +29,12 @@ console.log(user)
                     {/* <Text>Home</Text> */}
                     <FontAwesome size={30} name="home" color="black" />
                 </TabTrigger>
-                    {userRole==="admin" &&
-                <TabTrigger name="registerdTeam" href="/registerdTeam" style={styles.iconStyle}>
-                    {/* <Text>Home</Text> */}
-                    <AntDesign name="team" size={24} color="black" />
-                </TabTrigger>
-                    }
+                {userRole === "admin" &&
+                    <TabTrigger name="registerdTeam" href="/registerdTeam" style={styles.iconStyle}>
+                        {/* <Text>Home</Text> */}
+                        <AntDesign name="team" size={24} color="black" />
+                    </TabTrigger>
+                }
                 <TabTrigger name="auctionTable" href="/auctionTable" style={styles.iconStyle}>
                     <Image
                         source={require('../../assets/auction.png')}
@@ -46,13 +42,13 @@ console.log(user)
                     />
                 </TabTrigger>
                 {
-                    userRole &&  <TabTrigger name="onlineUsers" href="/onlineUsers" style={styles.iconStyle}>
-                 
-                    <FontAwesome6 name="users-line" size={24} color="black" />
-                </TabTrigger>  
+                    userRole && <TabTrigger name="onlineUsers" href="/onlineUsers" style={styles.iconStyle}>
+
+                        <FontAwesome6 name="users-line" size={24} color="black" />
+                    </TabTrigger>
                 }
-               
-                 <TabTrigger name="profile" href="/profile" style={styles.iconStyle}>
+
+                <TabTrigger name="profile" href="/profile" style={styles.iconStyle}>
                     {/* <Text>Home</Text> */}
                     <AntDesign name="user" size={24} color="black" />
                 </TabTrigger>
@@ -72,7 +68,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 2,
         borderBottomColor: 'black',
     },
-    tablistLayout:{
+    tablistLayout: {
         backgroundColor: "#3C3D37",
         paddingHorizontal: 20,
         paddingVertical: 10,

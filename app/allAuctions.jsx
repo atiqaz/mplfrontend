@@ -6,7 +6,7 @@ import { widthPerWidth } from '../helper/dimensions';
 import { useAuth } from '../context/AuthContext';
 import { isAuctionJoined } from '../helper/functions';
 import { getUserProfile } from '../helper/Api';
-import { useNavigation } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 
 const MyComponent = () => {
     const [value, setValue] = React.useState('upcoming');
@@ -22,6 +22,7 @@ const MyComponent = () => {
             url: `/api/auction/allauction?filter=${value}`,
             method: 'GET',
         });
+
         setAllData(data || []);
         setLoading(false);
     };
@@ -31,6 +32,9 @@ const MyComponent = () => {
     }, [value]);
 
     const participate = async (item) => {
+        if (!isLoggedIn) {
+            router.push('auth')
+        }
         if (userRole == "organisation") {
             const { data, status } = await fetchData({
                 url: `/api/users/participte/${loggedInUser._id}`,
@@ -40,7 +44,7 @@ const MyComponent = () => {
                 }
             })
 
-            console.log({ data })
+
             if (status) {
                 getAllAuctions()
                 getUser(userToken)
@@ -56,7 +60,7 @@ const MyComponent = () => {
                     auctionIds: item._id
                 }
             })
-            console.log({ data })
+
             if (status) {
                 getAllAuctions()
                 getUser(userToken)
@@ -70,7 +74,7 @@ const MyComponent = () => {
             }
             return false
         }
-        return false
+        return true
     }
 
     const navigation = useNavigation()
@@ -86,16 +90,19 @@ const MyComponent = () => {
                     { value: 'finished', label: 'Finished' },
                 ]}
             />
-
+            {/* <Text>data {JSON.stringify(allData)}</Text> */}
             {/* Show Data or No Data Message */}
             {loading ? (
                 <Text style={styles.loadingText}>Loading...</Text>
-            ) : allData.length > 0 ? (
+            ) : allData && allData?.length > 0 ? (
                 <FlatList
                     data={allData}
                     keyExtractor={(item) => item._id}
                     renderItem={({ item }) => {
-                        const isjoined = isAuctionJoined(loggedInUser, item)
+                        let isjoined
+                        if (isLoggedIn) {
+                            isjoined = isAuctionJoined(loggedInUser, item)
+                        }
                         return (
                             <TouchableOpacity onPress={() => navigation.navigate(`singleAuction`, {
                                 auctionId: item._id

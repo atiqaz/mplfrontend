@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { TextInput, Button, ActivityIndicator, RadioButton, Snackbar } from 'react-native-paper';
 import { globalStyles } from '../helper/styles';
@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import useAxios from '../helper/useAxios';
 import useUserDetails from '../hooks/useUserDetails';
 import { getUserProfile } from '../helper/Api';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -70,6 +71,12 @@ export default function Login() {
 
   return (
     <View style={[globalStyles.container, styles.form]}>
+    <TouchableOpacity style={{alignSelf:"flex-start" , backgroundColor:"gray", padding:6, borderRadius:50}} 
+    onPress={()=>router.replace('(home)')}
+    
+    >
+    <AntDesign name="home" size={30} color="white" />
+    </TouchableOpacity>
       {/* Role Selection */}
       <View style={styles.radioContainer}>
         <View style={styles.radioOption}>
