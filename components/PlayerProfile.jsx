@@ -7,8 +7,10 @@ import { widthPerWidth } from '../helper/dimensions';
 import PullToRefreshLayout from './layout/PullToRefreshLayout';
 import RefreshLayout from '../helper/RefreshLayout';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../hooks/useTheme';
 
 export default function PlayerProfile() {
+  const {colors}=useTheme()
   const [playerDetails, setPlayerDetails] = useState(null);
   const [bidDetails, setBidDetails] = useState(null);
   const { loggedInUser , userRole, setUserRole,isLoggedIn} = useAuth()
@@ -29,6 +31,58 @@ export default function PlayerProfile() {
 
     getPlayer();
   }, []);
+
+  const styles = StyleSheet.create({
+    container: {
+      padding: 20,
+      backgroundColor: '#f5f5f5',
+      flexGrow: 1,
+      paddingTop: 50,
+    },
+    card: {
+      borderRadius: 10,
+      paddingVertical: 15,
+      marginBottom: 15,
+      width: widthPerWidth(90)
+    },
+    primaryCard: {
+      backgroundColor: '#E3F2FD',
+    },
+    secondaryCard: {
+      backgroundColor: '#FFECB3',
+    },
+    highlightCard: {
+      backgroundColor: '#C8E6C9',
+    },
+    avatarContainer: {
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    name: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      marginTop: 10,
+      textAlign: 'center',
+    },
+    role: {
+      fontSize: 18,
+      color: '#666',
+      textAlign: 'center',
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 5,
+    },
+    divider: {
+      marginVertical: 8,
+    },
+    errorText: {
+      color: 'red',
+      textAlign: 'center',
+      marginTop: 10,
+    },
+  });
 
   return (
     <RefreshLayout refreshFunction={getPlayer}>
@@ -114,54 +168,4 @@ export default function PlayerProfile() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-    flexGrow: 1,
-    paddingTop: 50,
-  },
-  card: {
-    borderRadius: 10,
-    paddingVertical: 15,
-    marginBottom: 15,
-    width: widthPerWidth(90)
-  },
-  primaryCard: {
-    backgroundColor: '#E3F2FD',
-  },
-  secondaryCard: {
-    backgroundColor: '#FFECB3',
-  },
-  highlightCard: {
-    backgroundColor: '#C8E6C9',
-  },
-  avatarContainer: {
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  role: {
-    fontSize: 18,
-    color: '#666',
-    textAlign: 'center',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  divider: {
-    marginVertical: 8,
-  },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 10,
-  },
-});
+

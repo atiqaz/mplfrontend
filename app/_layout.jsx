@@ -5,6 +5,7 @@ import { AuthProvider } from '../context/AuthContext';
 import { SocketProvider } from '../context/socketContext';
 import { ProjectProvider } from '../context/useData';
 import { SnackbarProvider } from '../context/useSnackBar';
+import { ThemeProvider } from '../context/ThemeContext';
 
 function MainLayoutProvider() {
     return (
@@ -114,6 +115,7 @@ function MainLayoutProvider() {
 export default function layout() {
     return (
         <PaperProvider>
+        <ThemeProvider>
         <SnackbarProvider>
         <SocketProvider>
                 <AuthProvider>
@@ -123,7 +125,7 @@ export default function layout() {
                 </AuthProvider>
             </SocketProvider>
         </SnackbarProvider>
-            
+        </ThemeProvider>
         </PaperProvider>
     );
 }

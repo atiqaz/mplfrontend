@@ -5,8 +5,10 @@ import useAxios from '../helper/useAxios';
 import { router } from 'expo-router';
 import { Dropdown } from 'react-native-paper-dropdown';
 import * as ImagePicker from 'expo-image-picker';
+import { useTheme } from '../hooks/useTheme';
 
 const UserForm = () => {
+  const {colors}=useTheme()
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -18,29 +20,29 @@ const UserForm = () => {
   const [isError, setIsError] = useState(false);
   const [auctionData, setAuctionData] = useState([])
   const [RunningAuction, setRunningAuction] = useState('')
-  const [image,setImage]=useState('')
+  const [image, setImage] = useState('')
   const { fetchData, data, loading } = useAxios();
 
 
 
   const pickImageAsync = async () => {
-          let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
-            quality: .3,
-          });
-      
-          if (!result.canceled) {
-            console.log(result);
-            const imag = result.assets[0].uri
-            setImage(imag);
-          } else {
-            alert('You did not select any image.');
-          }
-        };
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: .3,
+    });
+
+    if (!result.canceled) {
+      console.log(result);
+      const imag = result.assets[0].uri
+      setImage(imag);
+    } else {
+      alert('You did not select any image.');
+    }
+  };
 
   const handleSubmit = async () => {
-    if (!name || !phone || !email || !password ) {
+    if (!name || !phone || !email || !password) {
       setMessage('Please fill in all the required fields');
       setIsError(true);
       setVisible(true);
@@ -79,29 +81,29 @@ const UserForm = () => {
           const formData = new FormData()
           formData.append('subFolder', 'team');
           formData.append('file', {
-              uri: image,
-              type: "image/jpg" || 'image/jpeg',
-              name: `avatar${Date.now()}.${image.split('.').pop()}`,
-              filename: `avatar ${Date.now()}.${image.split('.').pop()}`,
+            uri: image,
+            type: "image/jpg" || 'image/jpeg',
+            name: `avatar${Date.now()}.${image.split('.').pop()}`,
+            filename: `avatar ${Date.now()}.${image.split('.').pop()}`,
           })
           console.log('here')
-          const {data,status} = await fetchData({
-              url: `/api/users/imageupload/${res.data._id}`,
-              method: 'patch',
-              data: formData,
-              headers: {
-                  'Content-Type': 'multipart/form-data',
-                  key: '5TIvw5cpc0'
-              }
+          const { data, status } = await fetchData({
+            url: `/api/users/imageupload/${res.data._id}`,
+            method: 'patch',
+            data: formData,
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              key: '5TIvw5cpc0'
+            }
           });
           console.log(
             data
           )
           if (status) {
-              setImage('')
+            setImage('')
           }
         }
-        
+
         // setTimeout(() => {
         //   router.back();
         // }, 1000);
@@ -114,29 +116,53 @@ const UserForm = () => {
       setVisible(true);
     }
   };
+  const styles = StyleSheet.create({
+    container: {
+      padding: 16,
+      flex: 1,
+      // marginTop: 50,
+      justifyContent: "center",
+      backgroundColor:colors.background
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      marginBottom: 20,
+      color:colors.text,
+      textAlign:"center",
+   
+    },
+    input: {
+      marginBottom: 12,
+    },
+    submitButton: {
+      marginTop: 16,
+    },
+  });
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>User Registration</Text>
-<TouchableOpacity style={{
-                alignSelf: "center",
-                marginBottom: 20
-            }}
-            onPress={pickImageAsync}
-            >
-                <Avatar.Image size={100} source={{
-                    uri:image||'https://img.freepik.com/premium-vector/influencer-icon-vector-image-can-be-used-digital-nomad_120816-263441.jpg?w=740',
-                }} 
+      <TouchableOpacity style={{
+        alignSelf: "center",
+        marginBottom: 20
+      }}
+        onPress={pickImageAsync}
+      >
+        <Avatar.Image size={100} source={{
+          uri: image || 'https://img.freepik.com/premium-vector/influencer-icon-vector-image-can-be-used-digital-nomad_120816-263441.jpg?w=740',
+        }}
 
-// onPress={()=>console.log('pressed')}
+        // onPress={()=>console.log('pressed')}
 
-                />
-            </TouchableOpacity>
+        />
+      </TouchableOpacity>
       <TextInput
         label="Name"
         value={name}
         onChangeText={setName}
         style={styles.input}
+        mode={'outlined'}
       />
 
       <TextInput
@@ -145,6 +171,7 @@ const UserForm = () => {
         onChangeText={setPhone}
         keyboardType="numeric"
         style={styles.input}
+        mode={'outlined'}
       />
 
       <TextInput
@@ -154,6 +181,7 @@ const UserForm = () => {
         keyboardType="email-address"
         autoCapitalize="none"
         style={styles.input}
+        mode={'outlined'}
       />
 
       <TextInput
@@ -162,8 +190,9 @@ const UserForm = () => {
         onChangeText={setPassword}
         secureTextEntry
         style={styles.input}
+        mode={'outlined'}
       />
-     
+
       <Button
         mode="contained"
         onPress={handleSubmit}
@@ -186,24 +215,6 @@ const UserForm = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    flex: 1,
-    // marginTop: 50,
-    justifyContent:"center",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  input: {
-    marginBottom: 12,
-  },
-  submitButton: {
-    marginTop: 16,
-  },
-});
+
 
 export default UserForm;

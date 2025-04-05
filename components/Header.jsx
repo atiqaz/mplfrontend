@@ -6,7 +6,7 @@ import { Appbar } from 'react-native-paper';
 export default function Header({title}) {
     const _goBack = () => router.back();
   return (
-    <Appbar.Header>
+    <Appbar.Header mode='small'>
       <Appbar.BackAction onPress={_goBack} />
       <Appbar.Content title={title} />
 

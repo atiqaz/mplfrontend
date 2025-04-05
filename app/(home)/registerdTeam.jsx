@@ -17,8 +17,11 @@ import useAxios, { baseUrl } from "../../helper/useAxios";
 import Header from "../../components/Header";
 import { useData } from "../../context/useData";
 import RefreshLayout from "../../helper/RefreshLayout";
+import { useTheme } from "../../hooks/useTheme";
 
 export default function TeamList() {
+
+  const { colors } = useTheme()
   const [teams, setTeams] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [visible, setVisible] = useState(false);
@@ -38,7 +41,7 @@ export default function TeamList() {
       method: "GET",
     });
     setLoading(false);
-console.log(`/api/users?auctionId=${selectedAuction}`,res)
+    console.log(`/api/users?auctionId=${selectedAuction}`, res)
     if (res.status) {
       setTeams(res.data);
     }
@@ -126,17 +129,25 @@ console.log(`/api/users?auctionId=${selectedAuction}`,res)
 
   return (
     <RefreshLayout refreshFunction={getTeam}>
-      <View style={styles.container}>
+      <View style={[styles.container, {
+        backgroundColor: colors.background
+      }]}>
         <Header title={"Registered Team"} />
 
         {/* Purse Input and Global Button */}
-        <View style={styles.purseContainer}>
+        <View style={[styles.purseContainer, {
+          padding: 15
+        }]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, {
+              color: colors.text
+            }]}
             placeholder="Enter Purse Amount"
             value={purse}
             onChangeText={handlePurseChange}
             keyboardType="numeric"
+            placeholderTextColor={colors.text}
+
           />
           <Button mode="contained" onPress={assignPurse} disabled={loading}>
             {loading ? <ActivityIndicator color="white" /> : "Assign Purse"}
@@ -147,7 +158,11 @@ console.log(`/api/users?auctionId=${selectedAuction}`,res)
           data={teams}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => (
-            <Card style={styles.card}>
+            <Card style={[styles.card, {
+              backgroundColor: colors.overlay(.12)
+            }]}
+              mode="contained"
+            >
               <Card.Title
                 title={item.name}
                 subtitle={
@@ -159,7 +174,7 @@ console.log(`/api/users?auctionId=${selectedAuction}`,res)
                   <Avatar.Image
                     {...props}
                     source={{
-                      uri:`${baseUrl}${item.image}`
+                      uri: `${baseUrl}${item.image}`
                     }}
                   />
                 )}
@@ -199,20 +214,26 @@ console.log(`/api/users?auctionId=${selectedAuction}`,res)
               </Card.Actions>
             </Card>
           )}
+          contentContainerStyle={{
+            paddingHorizontal: 15
+          }}
         />
 
         <Portal>
           <Modal
             visible={visible}
             onDismiss={hideModal}
-            contentContainerStyle={styles.modalContainer}
+            contentContainerStyle={[styles.modalContainer,{
+              backgroundColor:colors.background,
+              marginHorizontal:10
+            }]}
           >
             {selectedTeam && (
               <>
                 <Avatar.Image
                   size={100}
                   source={{
-                    uri: `${baseUrl}${selectedTeam.image}`|| "https://via.placeholder.com/100",
+                    uri: `${baseUrl}${selectedTeam.image}` || "https://via.placeholder.com/100",
                   }}
                   style={styles.avatar}
                 />
@@ -255,20 +276,20 @@ console.log(`/api/users?auctionId=${selectedAuction}`,res)
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, backgroundColor: "#f5f5f5" },
+  container: { backgroundColor: "#f5f5f5" },
   purseText: { fontSize: 16, fontWeight: "bold", marginTop: 5 },
   actions: { justifyContent: "space-between" },
-  modalContainer: { backgroundColor: "white", padding: 20, borderRadius: 10 },
-  input:{
+  modalContainer: { padding: 20, borderRadius: 10 },
+  input: {
     marginBottom: 10,
     paddingHorizontal: 10,
     borderColor: "#ccc",
     borderWidth: 1,
     borderRadius: 5,
     fontSize: 16,
-    height:50
+    height: 50
   },
-  card:{
+  card: {
     marginBottom: 10,
     backgroundColor: "white",
     borderRadius: 10,
@@ -277,7 +298,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 2,
     elevation: 1,
-    marginTop:10
+    marginTop: 10
   }
 });
 

@@ -2,11 +2,13 @@ import { FlatList, StyleSheet, Text, View, ActivityIndicator } from 'react-nativ
 import React, { useEffect, useState } from 'react';
 import { SegmentedButtons, Card, Badge } from 'react-native-paper';
 import useAxios from '../helper/useAxios';
+import { useTheme } from '../hooks/useTheme';
 
 export default function Teams() {
     const [value, setValue] = useState('pending');
     const { fetchData, loading } = useAxios();
     const [data, setData] = useState([]);
+    const{colors}=useTheme()
 
     const getTeams = async () => {
         try {
@@ -27,8 +29,70 @@ export default function Teams() {
         getTeams();
     }, [value]);
 
+
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            padding: 16,
+            // backgroundColor: '#F4F4F4',
+        },
+        segmentedButtons: {
+            marginBottom: 12,
+        },
+        loaderContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        loadingText: {
+            marginTop: 10,
+            fontSize: 16,
+            color: '#555',
+        },
+        emptyContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        emptyText: {
+            fontSize: 18,
+            color: '#888',
+        },
+        card: {
+            marginBottom: 12,
+            borderRadius: 12,
+            // backgroundColor: '#FFF',
+            backgroundColor: colors.overlay(0.1),
+            // elevation: 3,
+            padding: 10,
+            paddingVertical:25
+        },
+        cardHeader: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 5,
+        },
+        teamName: {
+            fontSize: 18,
+            fontWeight: 'bold',
+            color:colors.text,
+        },
+        teamEmail: {
+            fontSize: 14,
+            color: colors.overlay(0.7),
+        },
+        statusBadge: {
+            color: 'white',
+        paddingHorizontal:8
+        },
+    });
+    
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container,{
+            backgroundColor:colors.background
+        }]}>
             <SegmentedButtons
                 value={value}
                 onValueChange={setValue}
@@ -54,7 +118,7 @@ export default function Teams() {
                     data={data}
                     keyExtractor={(item) => item._id}
                     renderItem={({ item }) => (
-                        <Card style={styles.card}>
+                        <View style={styles.card}>
                             <Card.Content>
                                 <View style={styles.cardHeader}>
                                     <Text style={styles.teamName}>{item.name}</Text>
@@ -64,7 +128,7 @@ export default function Teams() {
                                 </View>
                                 <Text style={styles.teamEmail}>{item.email}</Text>
                             </Card.Content>
-                        </Card>
+                        </View>
                     )}
                 />
             )}
@@ -85,58 +149,3 @@ const getStatusStyle = (status) => {
     }
 };
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 16,
-        backgroundColor: '#F4F4F4',
-    },
-    segmentedButtons: {
-        marginBottom: 12,
-    },
-    loaderContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    loadingText: {
-        marginTop: 10,
-        fontSize: 16,
-        color: '#555',
-    },
-    emptyContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    emptyText: {
-        fontSize: 18,
-        color: '#888',
-    },
-    card: {
-        marginBottom: 12,
-        borderRadius: 12,
-        backgroundColor: '#FFF',
-        elevation: 3,
-        padding: 10,
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 5,
-    },
-    teamName: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    teamEmail: {
-        fontSize: 14,
-        color: '#555',
-    },
-    statusBadge: {
-        color: 'white',
-    paddingHorizontal:8
-    },
-});

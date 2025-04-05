@@ -3,6 +3,7 @@ import { StyleSheet, View, ScrollView, ActivityIndicator, TouchableOpacity } fro
 import { Text, Card, Avatar, Divider, Chip } from 'react-native-paper';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import useAxios from '../helper/useAxios';
+import { useTheme } from '../hooks/useTheme';
 
 export default function SingleAuction() {
     const { auctionId } = useLocalSearchParams();
@@ -11,6 +12,7 @@ export default function SingleAuction() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [remainigTime, setRemainingTime] = useState('')
+    const { colors } = useTheme()
 
     const getData = async () => {
         try {
@@ -38,10 +40,10 @@ export default function SingleAuction() {
         if (hours < 0 || minutes < 0 || seconds < 0) {
             return 'Auction Ended'
         }  // If auction ended, return "Auction Ended" instead of remaining time
-        
-        if(hours>=24){
-            const day = hours/24
-            const remainingDays = hours%24
+
+        if (hours >= 24) {
+            const day = hours / 24
+            const remainingDays = hours % 24
             return `${day.toFixed(0)}d ${remainingDays}h ${seconds}s`
         }
         // Format remaining time
@@ -70,7 +72,11 @@ export default function SingleAuction() {
 
     if (!data) {
         return (
-            <View style={styles.container}>
+            <View style={[styles.container, {
+                backgroundColor: colors.background,
+                justifyContent: 'center',
+                alignItems: 'center',
+            }]}>
                 <Text variant="titleMedium">No Data Found</Text>
             </View>
         );
@@ -88,15 +94,21 @@ export default function SingleAuction() {
 
 
     return (
-        <ScrollView style={styles.container}>
-            <Card mode="elevated" style={[styles.card, {
-                padding: 2
+        <ScrollView style={[styles.container, {
+            backgroundColor: colors.background,
+
+        }]}>
+            <Card mode="contained"  style={[styles.card, {
+                padding: 2,
+                backgroundColor: colors.overlay(0.12),
             }]}>
-                <Card.Title title={data.auction.title}  right={()=><Text style={{marginRight:15, fontWeight:"800"}}>{remainigTime}</Text>}/>
-                
+                <Card.Title title={data.auction.title} right={() => <Text style={{ marginRight: 15, fontWeight: "800" }}>{remainigTime}</Text>} />
+
                 <Card.Content>
                     <View style={styles.statusContainer}>
-                        <Text variant="bodyMedium" style={styles.description}>
+                        <Text variant="bodyMedium" style={[styles.description,{
+                            color:colors.text,
+                        }]}>
                             {data.auction.description}
                         </Text>
                         <Chip textStyle={{
@@ -106,7 +118,9 @@ export default function SingleAuction() {
                             {data.auction.status}
                         </Chip>
                     </View>
-                    <Text variant="bodySmall" style={styles.date}>
+                    <Text variant="bodySmall" style={[styles.date,{
+                        color: colors.overlay(0.7),
+                    }]}>
                         Auction Date: {new Date(data.auction.auctionDate).toDateString()}
                     </Text>
                 </Card.Content>
@@ -131,17 +145,17 @@ export default function SingleAuction() {
 
             <Divider bold style={styles.divider} />
 
-           <View style={{
-            flexDirection:"row",justifyContent:"space-between",
-            alignItems:"center"
-           }}>
-           <Text variant="titleMedium" style={styles.sectionTitle}>Players</Text>
-            <TouchableOpacity onPress={()=>navigation.navigate('players',{
-                auctionId:data.auction._id
-            })}><Text variant="bodySmall" style={[styles.sectionTitle,{
-                textAlign:"right"
-            }]}>See all</Text></TouchableOpacity>
-           </View>
+            <View style={{
+                flexDirection: "row", justifyContent: "space-between",
+                alignItems: "center"
+            }}>
+                <Text variant="titleMedium" style={styles.sectionTitle}>Players</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('players', {
+                    auctionId: data.auction._id
+                })}><Text variant="bodySmall" style={[styles.sectionTitle, {
+                    textAlign: "right"
+                }]}>See all</Text></TouchableOpacity>
+            </View>
             {data.players.length > 0 ? (
                 data.players.map((player) => (
                     <TouchableOpacity onPress={() => router.push(`playerDetails?playerId=${player._id}`)}>
@@ -166,14 +180,13 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 16,
-        backgroundColor: '#FAFAFA',
+        // backgroundColor: '#FAFAFA',
     },
     card: {
         marginBottom: 12,
         borderRadius: 12,
         backgroundColor: '#FFF',
-        elevation: 3,
-        // padding: 10,
+       
     },
     description: {
         flex: 1,

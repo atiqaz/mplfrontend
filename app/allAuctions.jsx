@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { isAuctionJoined } from '../helper/functions';
 import { getUserProfile } from '../helper/Api';
 import { router, useNavigation } from 'expo-router';
+import { useTheme } from '../hooks/useTheme';
 
 const MyComponent = () => {
     const [value, setValue] = React.useState('upcoming');
@@ -15,6 +16,7 @@ const MyComponent = () => {
     const { fetchData } = useAxios();
     const [allData, setAllData] = React.useState([]);
     const [loading, setLoading] = React.useState(false);
+    const {colors}=useTheme()
 
     const getAllAuctions = async () => {
         setLoading(true);
@@ -79,7 +81,10 @@ const MyComponent = () => {
 
     const navigation = useNavigation()
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container,{
+            backgroundColor: colors.background,
+            // backgroundColor: '#F4F4F4',
+        }]}>
             {/* Segmented Buttons for Filter */}
             <SegmentedButtons
                 value={value}
@@ -93,7 +98,9 @@ const MyComponent = () => {
             {/* <Text>data {JSON.stringify(allData)}</Text> */}
             {/* Show Data or No Data Message */}
             {loading ? (
-                <Text style={styles.loadingText}>Loading...</Text>
+                <Text style={[styles.loadingText,{
+                    color: colors.text,
+                }]}>Loading...</Text>
             ) : allData && allData?.length > 0 ? (
                 <FlatList
                     data={allData}
@@ -107,30 +114,42 @@ const MyComponent = () => {
                             <TouchableOpacity onPress={() => navigation.navigate(`singleAuction`, {
                                 auctionId: item._id
                             })}>
-                                <Card style={[styles.card, {
-                                    backgroundColor: isjoined ? '#D8E0D2' : '#ffffff',
+                                <View style={[styles.card, {
+                                    backgroundColor: isjoined ? '#D8E0D2' : colors.overlay(0.1),
 
 
                                 }]}>
-                                    <Card.Title title={item.title} />
+                                    <Card.Title style={{color:colors.text}} title={item.title} />
                                     <Card.Content>
-                                        <Text>{item.description}</Text>
-                                        <Text style={styles.dateText}>
+                                        <Text style={{color:colors.text}}>{item.description}</Text>
+                                        <Text style={[styles.dateText,{color:colors.overlay(0.7)}]}>
                                             Auction Date: {new Date(item.auctionDate).toLocaleString()}
                                         </Text>
                                         {showButton() && <Card.Actions >
                                             <Button disabled={isjoined} onPress={() => participate(item)}>{isjoined ? "Participated" : "participate"}</Button>
                                         </Card.Actions>}
                                     </Card.Content>
-                                </Card>
+                                </View>
                             </TouchableOpacity>
                         )
                     }}
+                    contentContainerStyle={{
+                        paddingBottom:50,
+                        paddingHorizontal:5
+                    }}
+                    showsVerticalScrollIndicator={false}
                 />
             ) : (
-                <View style={styles.noDataContainer}>
-                    <Text style={styles.noDataText}>🚀 No auctions available!</Text>
-                    <Text style={styles.noDataSubText}>Check back later for more updates.</Text>
+                <View style={[styles.noDataContainer,{
+                    backgroundColor: colors.background,
+
+                }]}>
+                    <Text style={[styles.noDataText,{
+                        color: colors.text,
+                    }]}>🚀 No auctions available!</Text>
+                    <Text style={[styles.noDataSubText,{
+                        color: colors.text,
+                    }]}>Check back later for more updates.</Text>
                 </View>
             )}
         </SafeAreaView>
@@ -143,6 +162,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingTop: 20,
         paddingHorizontal: 10,
+   
     },
     loadingText: {
         marginTop: 20,
@@ -153,6 +173,7 @@ const styles = StyleSheet.create({
         width: widthPerWidth(90),
         marginVertical: 10,
         padding: 10,
+        borderRadius: 12,
     },
     dateText: {
         marginTop: 5,

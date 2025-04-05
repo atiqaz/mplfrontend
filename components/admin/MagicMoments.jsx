@@ -9,6 +9,7 @@ import {
     TouchableOpacity,
 } from "react-native";
 import Entypo from '@expo/vector-icons/Entypo';
+import { useTheme } from "../../hooks/useTheme";
 
 const { width } = Dimensions.get("window");
 
@@ -52,14 +53,70 @@ export default function MagicMoments() {
         }
     };
 
+
+    const {colors} = useTheme()
+
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            // backgroundColor: "#fff",
+            justifyContent: "center",
+            alignItems: "center",
+            // paddingTop: 40,
+        },
+        navContainer: {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            width: width * 0.85,
+            marginBottom: 10,
+        },
+        navButton: {
+            fontSize: 25,
+            color: "#333",
+            padding: 10,
+        },
+        card: {
+            width: width * 0.85,
+            // backgroundColor: "#f9f9f9",
+            borderRadius: 12,
+            padding: 20,
+            marginHorizontal: 10,
+            // elevation: 1,
+            shadowColor: "#000",
+            shadowOpacity: 0.1,
+            shadowOffset: { width: 0, height: 2 },
+            marginBottom: 5
+        },
+        header: {
+            fontSize: 20,
+            fontWeight: "bold",
+            color: "#1a202c",
+            marginBottom: 10,
+            textAlign: "center",
+        },
+        details: {
+            fontSize: 16,
+            color:colors.text,
+            marginVertical: 2,
+            textAlign: "center",
+        },
+        description: {
+            fontSize: 14,
+            color: colors.overlay(0.7),
+            marginTop: 10,
+            textAlign: "center",
+            fontStyle: "italic",
+        },
+    });
+
     return (
         <View style={styles.container}>
             <View style={styles.navContainer}>
                 <TouchableOpacity onPress={() => handleScroll("left")}>
-                    <Entypo name="arrow-with-circle-left" size={24} color="black" />
+                    <Entypo name="arrow-with-circle-left" size={24} color={colors.text}/>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleScroll("right")}>
-                    <Entypo name="arrow-with-circle-right" size={24} color="black" />
+                    <Entypo name="arrow-with-circle-right" size={24} color={colors.text} />
                 </TouchableOpacity>
             </View>
 
@@ -75,9 +132,15 @@ export default function MagicMoments() {
                 scrollEventThrottle={16}
             >
                 {data.map((item, index) => (
-                    <View key={index} style={styles.card}>
-                        <Text style={styles.header}>{item.header}</Text>
-                        <Text style={styles.details}>🏆 {item.name}</Text>
+                    <View key={index} style={[styles.card,{
+                        backgroundColor:colors.overlay(0.1),
+                    }]}>
+                        <Text style={[styles.header,{
+                            color:colors.text
+                        }]}>{item.header}</Text>
+                        <Text style={[styles.details,{
+                            color:colors.text
+                        }]}>🏆 {item.name}</Text>
 
                         {item.amount && (
                             <Text style={styles.details}>💰 Price: {item.amount}</Text>
@@ -108,55 +171,4 @@ export default function MagicMoments() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#fff",
-        justifyContent: "center",
-        alignItems: "center",
-        // paddingTop: 40,
-    },
-    navContainer: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        width: width * 0.85,
-        marginBottom: 10,
-    },
-    navButton: {
-        fontSize: 25,
-        color: "#333",
-        padding: 10,
-    },
-    card: {
-        width: width * 0.85,
-        backgroundColor: "#f9f9f9",
-        borderRadius: 12,
-        padding: 20,
-        marginHorizontal: 10,
-        elevation: 5,
-        shadowColor: "#000",
-        shadowOpacity: 0.1,
-        shadowOffset: { width: 0, height: 2 },
-        marginBottom: 5
-    },
-    header: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#1a202c",
-        marginBottom: 10,
-        textAlign: "center",
-    },
-    details: {
-        fontSize: 16,
-        color: "#333",
-        marginVertical: 2,
-        textAlign: "center",
-    },
-    description: {
-        fontSize: 14,
-        color: "#666",
-        marginTop: 10,
-        textAlign: "center",
-        fontStyle: "italic",
-    },
-});
+

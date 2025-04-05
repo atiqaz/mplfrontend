@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import useAxios from '../helper/useAxios';
 import { Card, IconButton } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTheme } from '../hooks/useTheme';
 
 export default function Players() {
     const [players, setPlayers] = useState([]);
@@ -10,6 +11,7 @@ export default function Players() {
     const [searchQuery, setSearchQuery] = useState('');
     const router = useRouter();
     const {auctionId} = useLocalSearchParams()
+    const { colors } = useTheme()
     console.log(auctionId)
 
     const getData = async () => {
@@ -45,15 +47,24 @@ export default function Players() {
     );
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container ,{
+            backgroundColor: colors.background,
+        
+        }]}>
             {/* Header with Search Bar */}
             <View style={styles.header}>
 
                 <TextInput
-                    style={styles.searchInput}
+                    style={[styles.searchInput,{
+                        color: colors.text,
+                        // backgroundColor: colors.overlay(0.12),
+                    }]}
                     placeholder="Search..."
                     value={searchQuery}
                     onChangeText={setSearchQuery}
+                    placeholderTextColor={colors.text}
+
+          
                 />
                 <IconButton
                     icon="refresh"
@@ -75,13 +86,21 @@ export default function Players() {
                     renderItem={({ item }) => (
                         <TouchableOpacity onPress={() => router.push(`playerDetails?playerId=${item._id}`)}>
 
-                            <Card style={styles.card} >
+                            <View style={[styles.card,{
+                                backgroundColor: colors.overlay(0.12),
+                            }]} >
                                 <Card.Content>
-                                    <Text style={styles.playerName}>{item.name}</Text>
-                                    <Text style={styles.detailText}>{item.battingDetails.handedness} {item.playerRole}</Text>
-                                    <Text style={styles.detailText}>Bowling: {item.bowlingDetails.bowlingStyle}</Text>
+                                    <Text style={[styles.playerName,{
+                                        color: colors.text,
+                                    }]}>{item.name}</Text>
+                                    <Text style={[styles.detailText,{
+                                        color: colors.text,
+                                    }]}>{item.battingDetails.handedness} {item.playerRole}</Text>
+                                    <Text style={[styles.detailText,{
+                                        color: colors.text,
+                                    }]}>Bowling: {item.bowlingDetails.bowlingStyle}</Text>
                                 </Card.Content>
-                            </Card>
+                            </View>
                         </TouchableOpacity>
                     )}
                 />
@@ -93,7 +112,7 @@ export default function Players() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F4F4F4',
+        backgroundColor: 'red',
         padding: 16,
     },
     header: {
@@ -109,7 +128,7 @@ const styles = StyleSheet.create({
     },
     searchInput: {
         flex: 1,
-        backgroundColor: '#FFF',
+        // backgroundColor: '#FFF',
         padding: 8,
         borderRadius: 8,
         borderWidth: 1,
@@ -131,7 +150,8 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         backgroundColor: '#FFF',
         padding: 12,
-        elevation: 3,
+        paddingVertical:20,
+        // elevation: 3,
     },
     playerName: {
         fontSize: 18,

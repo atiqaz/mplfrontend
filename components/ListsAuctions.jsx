@@ -113,10 +113,10 @@ export default function ListsAuctions({ setStarted, selectedInternalAuction, set
 }
 
 const styles = StyleSheet.create({
-    container: { paddingHorizontal: 16, backgroundColor: '#F9F9F9',  },
+    container: {  },
     card: { marginBottom: 10, borderRadius: 10, elevation: 3 },
     loader: { marginTop: 20 },
-    list: { paddingBottom: 20 },
+    list: { paddingBottom: 120 ,paddingHorizontal:15, paddingTop:15 },
     fab: { position: 'absolute', bottom: 20, right: 20, backgroundColor: '#6200EE' },
     modalContainer: { backgroundColor: 'white', padding: 20, marginHorizontal: 20, borderRadius: 10 },
     modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },

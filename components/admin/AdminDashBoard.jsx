@@ -5,8 +5,10 @@ import { ActivityIndicator, Surface } from 'react-native-paper';
 import { heightPerHeight } from '../../helper/dimensions';
 import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
+import { useTheme } from '../../hooks/useTheme';
 
 export default function AdminDashBoard() {
+    const { colors } = useTheme()
     const navigation = useNavigation();
     const { fetchData, loading } = useAxios();
     const [totals, setTotal] = useState({
@@ -56,9 +58,16 @@ export default function AdminDashBoard() {
     return (
         <View style={styles.container}>
             {Object.keys(totals).map((key, index) => (
-                <Pressable key={index} onPress={() => handlePress(key)} style={({ pressed }) => [styles.card, pressed && styles.pressedCard]}>
-                    <Surface style={styles.cardContent} elevation={4}>
-                        <Text style={styles.cardTitle}>{key}</Text>
+                <Pressable key={index} onPress={() => handlePress(key)} style={({ pressed }) => [styles.card, pressed && styles.pressedCard,{
+// backgroundColor: 'red',
+                }]}>
+                    <Surface style={[styles.cardContent,{
+                        backgroundColor: colors.overlay(.1),
+                      
+                    }]} elevation={0.5}>
+                        <Text style={[styles.cardTitle,{
+                            color: colors.text,
+                        }]}>{key}</Text>
                         <Text style={styles.cardValue}>{totals[key]}</Text>
                     </Surface>
                 </Pressable>
@@ -73,7 +82,7 @@ const styles = StyleSheet.create({
         flexWrap: "wrap",
         justifyContent: "space-between",
         padding: 16,
-        backgroundColor: "#F4F4F4",
+       
     },
     loaderContainer: {
         flex: 1,
@@ -90,7 +99,7 @@ const styles = StyleSheet.create({
     cardContent: {
         padding: 16,
         borderRadius: 12,
-        backgroundColor: "#FFF",
+        // backgroundColor: "#FFF",
         alignItems: "center",
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Modal, StyleSheet, Text, Pressable, View } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { widthPerWidth } from '../helper/dimensions';
@@ -6,8 +6,11 @@ import { Button, Paragraph, TextInput } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import useAxios from '../helper/useAxios';
 import { useSnackbar } from '../context/useSnackBar';
+import { useTheme } from '../hooks/useTheme';
 
 const CreateAuctionModal = ({ modalVisible, setModalVisible }) => {
+
+    const {colors}=useTheme()
     const [text, setText] = React.useState("");
     const { fetchData, loading , error } = useAxios();
     const {showSnackbar}=useSnackbar()
@@ -16,10 +19,15 @@ const CreateAuctionModal = ({ modalVisible, setModalVisible }) => {
        const handleInputChange = (field, value) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
-    if(error){
-        showSnackbar(error?.message ||'Failed to create auction', 'error')
+    // if(error){
+    //     showSnackbar(error?.message ||'Failed to create auction', 'error')
       
-    }
+    // }
+    useEffect(() => {
+        if (error) {
+            showSnackbar(error?.message || 'Failed to create auction', 'error')
+        }
+    },[error])
        const handleDateChange = (event, selectedDate) => {
         setShowDatePicker(false);
         if (selectedDate) {
@@ -52,7 +60,11 @@ const CreateAuctionModal = ({ modalVisible, setModalVisible }) => {
                         onPress={() => setModalVisible(false)} // Close when clicking outside
                     >
                         <Pressable
-                            style={styles.modalView}
+                            style={[styles.modalView,{
+                                backgroundColor: colors.background,
+                                borderColor: colors.border,
+                                borderWidth: 1,
+                            }]}
                             onPress={() => { }} // Prevent closing when clicking inside
                         >
                             {/* <Text style={styles.modalText}>Hello World!</Text> */}
@@ -60,11 +72,16 @@ const CreateAuctionModal = ({ modalVisible, setModalVisible }) => {
                                 label="Auction Title"
                                 value={formData.title} onChangeText={(value) => handleInputChange('title', value)} 
                                 style={styles.input}
-                            /> <TextInput
+                                mode="outlined"
+                                placeholder='Enter Auction Title'
+                            />
+                             <TextInput
                                 label="Auction Description"
                                 value={formData.description} onChangeText={(value) => handleInputChange('description', value)}
                                 style={styles.input}
                                 numberOfLines={5}
+                                mode="outlined"
+                                placeholder='Enter Auction Description'
                             />
                             <Paragraph>Selected Date: {formData.auctionDate.toLocaleDateString()}</Paragraph>
                              <Button mode='contained' style={styles.submitButton} onPress={() => setShowDatePicker(true)}>Select Auction Date</Button>
@@ -94,8 +111,9 @@ const styles = StyleSheet.create({
     },
     modalView: {
         width: widthPerWidth(100),
-        backgroundColor: 'white',
-        borderRadius: 20,
+
+        borderTopEndRadius: 20,
+        borderTopStartRadius: 20,
         padding: 35,
         alignItems: 'center',
         shadowColor: '#000',

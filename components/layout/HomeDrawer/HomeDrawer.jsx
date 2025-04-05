@@ -7,6 +7,7 @@ import EvilIcons from '@expo/vector-icons/EvilIcons';
 import { AntDesign, Entypo, MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../../context/AuthContext';
 import { router } from 'expo-router';
+import { useTheme } from '../../../hooks/useTheme';
 
 
 export default function HomeDrawer() {
@@ -32,12 +33,15 @@ export default function HomeDrawer() {
 
 const CustomDrawerContent = (props) => {
     const { logout } = useAuth()
+    const {colors}=useTheme()
     const closAndNavigate = (url) => {
         router.push(url)
         props.navigation.closeDrawer()
     }
     return (
-        <DrawerContentScrollView {...props} contentContainerStyle={styles.drawerContainer}>
+        <DrawerContentScrollView {...props} contentContainerStyle={[styles.drawerContainer,{
+            backgroundColor:colors.background
+        }]}>
 
             <DrawerItem
                 label="Home"

@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import React from 'react';
 import { Drawer } from 'expo-router/drawer';
 import { Button } from 'react-native-paper';
@@ -6,6 +6,7 @@ import { DrawerItem, DrawerContentScrollView } from '@react-navigation/drawer';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../../context/AuthContext';
+import { useTheme } from '../../../hooks/useTheme';
 
 export default function _layout() {
 
@@ -36,10 +37,15 @@ export default function _layout() {
 }
 
 const CustomDrawerContent = (props) => {
-    const { logout } = useAuth()
+    const {colors}=useTheme()
+    const { logout, userDetails } = useAuth()
     return (
-        <DrawerContentScrollView {...props} contentContainerStyle={styles.drawerContainer}>
+        <DrawerContentScrollView {...props} contentContainerStyle={[styles.drawerContainer,{
+            backgroundColor:colors.background
+        }]}>
             {/* Profile Drawer Item */}
+
+           
             <DrawerItem
                 label="Profile"
                 onPress={() => props.navigation.navigate("index")}
@@ -72,6 +78,7 @@ const CustomDrawerContent = (props) => {
 const styles = StyleSheet.create({
     drawerContainer: {
         flex: 1,
+    
 
     },
     logoutContainer: {

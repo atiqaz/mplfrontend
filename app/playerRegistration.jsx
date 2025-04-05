@@ -6,9 +6,11 @@ import useAxios from '../helper/useAxios';
 import { showToast } from '../helper/toasts';
 import { Dropdown } from 'react-native-paper-dropdown';
 import * as ImagePicker from 'expo-image-picker';
+import { useTheme } from '../hooks/useTheme';
 
 
 export default function PlayerRegistration() {
+    const { colors } = useTheme()
 
     const initialFormData = {
         name: '',
@@ -27,7 +29,7 @@ export default function PlayerRegistration() {
             bowlingStyle: '', // 'Right Arm Fast', 'Left Arm Spinner', etc.
         },
         basePrice: 1000, // Default base price
-        
+
     };
 
     const [formData, setFormData] = useState(initialFormData);
@@ -38,8 +40,8 @@ export default function PlayerRegistration() {
     const [RunningAuction, setRunningAuction] = useState('')
     const { fetchData, error, loading } = useAxios();
     const [image, setImage] = useState('')
-   
-  
+
+
 
     useEffect(() => {
         if (error) {
@@ -82,7 +84,7 @@ export default function PlayerRegistration() {
     };
 
     const handleSubmit = async () => {
-       
+
 
         const payload = { ...formData, auctionId: RunningAuction }
         const { data, message, status } = await fetchData({
@@ -123,6 +125,39 @@ export default function PlayerRegistration() {
 
         }
     };
+
+
+    const styles = StyleSheet.create({
+        container: {
+            padding: 20,
+            flexGrow: 1,
+            paddingTop: heightPerHeight(10),
+            backgroundColor: colors.background
+        },
+        header: {
+            fontSize: 24,
+            fontWeight: 'bold',
+            marginBottom: 20,
+            textAlign: 'center',
+            color:colors.text
+        },
+        input: {
+            marginBottom: 15,
+        },
+        sectionHeader: {
+            fontSize: 14,
+            fontWeight: 'bold',
+            marginTop: 10,
+            marginBottom: 10,
+            color:colors.text
+        },
+        divider: {
+            marginVertical: 10,
+        },
+        submitButton: {
+            marginTop: 20,
+        },
+    });
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -184,6 +219,7 @@ export default function PlayerRegistration() {
                 label="Password"
                 secureTextEntry={!showpassword}
                 value={formData.password}
+                mode='outlined'
                 onChangeText={(value) => handleChange('password', value)}
                 right={<TextInput.Icon icon="eye" onPress={() => setShowPassword((pre) => !pre)} />}
             />
@@ -200,6 +236,7 @@ export default function PlayerRegistration() {
                 ]}
                 value={formData.playerRole}
                 onSelect={(value) => handleChange('playerRole', value)}
+                mode='outlined'
             />
 
 
@@ -207,6 +244,7 @@ export default function PlayerRegistration() {
                 <Divider style={styles.divider} />
                 <Text style={styles.sectionHeader}>Batter Details</Text>
                 <Dropdown
+                    mode='outlined'
                     label="Batting Handendness"
                     options={[
                         { label: "Right Hand", value: 'Right-hand' },
@@ -217,6 +255,7 @@ export default function PlayerRegistration() {
                 />
                 <Text style={styles.sectionHeader}>Is Wicketkeeper ?</Text>
                 <Dropdown
+                    mode='outlined'
                     label="IsWicketkeeper"
                     options={[
                         { label: "Yes", value: 'yes' },
@@ -227,6 +266,7 @@ export default function PlayerRegistration() {
                 />
                 <Text style={styles.sectionHeader}>Preferred Batting Order ?</Text>
                 <Dropdown
+                    mode='outlined'
                     label="Preferred Batting Order ?"
                     options={[
                         { label: "Middle Order", value: 'Middle Order' },
@@ -238,6 +278,7 @@ export default function PlayerRegistration() {
 
                 <Text style={styles.sectionHeader}>Preferred Bowling Style ?</Text>
                 <Dropdown
+                    mode='outlined'
                     label="Preferred Bowling Style"
                     options={[
                         { label: "Right Arm Fast", value: 'Right Arm Fast' },
@@ -287,31 +328,4 @@ export default function PlayerRegistration() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        padding: 20,
-        flexGrow: 1,
-        paddingTop: heightPerHeight(10),
-    },
-    header: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        textAlign: 'center',
-    },
-    input: {
-        marginBottom: 15,
-    },
-    sectionHeader: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        marginTop: 10,
-        marginBottom: 10,
-    },
-    divider: {
-        marginVertical: 10,
-    },
-    submitButton: {
-        marginTop: 20,
-    },
-});
+

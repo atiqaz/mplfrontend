@@ -20,6 +20,7 @@ import RecenTSeries from '../../components/admin/RecenTSeries';
 import Carousel from '../../components/admin/Carousel';
 import MagicMoments from '../../components/admin/MagicMoments';
 import OurPartners from '../../components/common/Ourpartners';
+import { useTheme } from '../../hooks/useTheme';
 
 // Import Common Layout
 // import PullToRefreshLayout from '../../components/PullToRefreshLayout';
@@ -42,6 +43,8 @@ export default function Home({ animatedValue,
   const [myAuctionList, setMyAuctionList] = useState([]);
   const [menuVisible, setMenuVisible] = useState(false);
   const { showSnackbar } = useSnackbar()
+
+  const {colors} = useTheme()
   // -----------------------search------------------------------
   const [isSearching, setIsSearching] = useState(false)
 
@@ -140,17 +143,19 @@ export default function Home({ animatedValue,
     const url = `https://wa.me/${9122038950}`;
     Linking.openURL(url).catch(() => alert("Make sure WhatsApp is installed"));
   };
+
+
   return (
     <View style={{ flex: 1, height: heightPerHeight(100) }}>
       <ScrollView contentContainerStyle={{
         flexGrow: 1,
-        backgroundColor: 'white',
-        padding: 10,
+        backgroundColor: colors.background,
+        // padding: 10,
         paddingBottom: 0,
       }}>
 
 
-        {isLoggedIn && <Appbar.Header mode="center-aligned" elevated={false} style={{ marginLeft: 10 }}>
+        {isLoggedIn && <Appbar.Header mode="small" elevated={false} style={{ marginLeft: 10 }}>
           {isSearching ? (
             <TextInput
               style={styles.searchInput}
@@ -306,7 +311,7 @@ export default function Home({ animatedValue,
                 <Divider></Divider>
                 <View>
                   <Text style={{
-                    marginVertical: 15, fontSize: 18, fontWeight: "600", textAlign: "center", opacity: .8
+                    marginVertical: 15, fontSize: 18, fontWeight: "600", textAlign: "center", opacity: .8, color:colors.text
                   }} >What are you looking for  ?</Text>
                   <View>
                     <FlatList
@@ -354,7 +359,7 @@ export default function Home({ animatedValue,
                   marginTop: 10
                 }}>
                   <Text style={{
-                    marginVertical: 15, fontSize: 18, fontWeight: "600", textAlign: "left", opacity: .8
+                    marginVertical: 15, fontSize: 18, fontWeight: "600", textAlign: "left", opacity: .8 ,color:colors.text
                   }} >Magic Moments</Text>
                   <MagicMoments />
                 </View>

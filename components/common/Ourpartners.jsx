@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, Image, StyleSheet, FlatList, Dimensions } from "react-native";
+import { useTheme } from "../../hooks/useTheme";
 
 const { width } = Dimensions.get("window");
 
@@ -11,18 +12,27 @@ const partners = [
 ]
 
 export default function OurPartners() {
+  const {colors} = useTheme()
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Our Official Partners</Text>
+    <View style={[styles.container,{
+      backgroundColor:colors.background
+    }]}>
+      <Text style={[styles.title,{
+        color:colors.text
+      }]}>Our Official Partners</Text>
       <FlatList
         data={partners}
         keyExtractor={(item) => item.id}
         numColumns={2}
         contentContainerStyle={styles.listContainer}
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <View style={[styles.card,{
+            backgroundColor:colors.overlay(0.1),
+          }]}>
             <Image source={{ uri: item.logo }} style={styles.logo} resizeMode="contain" />
-            <Text style={styles.name}>{item.name}</Text>
+            <Text style={[styles.name,{
+              color:colors.text
+            }]}>{item.name}</Text>
           </View>
         )}
       />
@@ -33,14 +43,13 @@ export default function OurPartners() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
     alignItems: "center",
     paddingTop: 40,
   },
   title: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#1a202c",
+    
     marginBottom: 20,
   },
   listContainer: {
@@ -49,12 +58,12 @@ const styles = StyleSheet.create({
   },
   card: {
     width: width * 0.4,
-    backgroundColor: "#f9f9f9",
+    // backgroundColor: "#f9f9f9",
     borderRadius: 10,
     padding: 15,
     alignItems: "center",
     margin: 10,
-    elevation: 3,
+    // elevation: 3,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
