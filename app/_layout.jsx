@@ -17,6 +17,7 @@ function MainLayoutProvider() {
                     name="(home)"
                     options={{
                         headerShown: false,
+                        
                     }}
                 />
                   <Stack.Screen
@@ -81,7 +82,15 @@ function MainLayoutProvider() {
                         title:"Auctions",
                         headerShown: true,
                     }}
+                /> 
+                 <Stack.Screen
+                    name="aTable"
+                    options={{
+                        title:"Auctions",
+                        headerShown: false,
+                    }}
                 />
+
                 <Stack.Screen
                     name="singleAuction"
 
@@ -89,7 +98,9 @@ function MainLayoutProvider() {
                         title:"Auction",
                         headerShown: true,
                     }}
-                /><Stack.Screen
+                />
+                
+                <Stack.Screen
                     name="teams"
 
                     options={{

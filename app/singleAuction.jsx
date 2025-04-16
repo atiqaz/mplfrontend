@@ -1,18 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { Text, Card, Avatar, Divider, Chip } from 'react-native-paper';
+import { Text, Card, Avatar, Divider, Chip, Button, TextInput } from 'react-native-paper';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import useAxios from '../helper/useAxios';
 import { useTheme } from '../hooks/useTheme';
+import { widthPerWidth } from '../helper/dimensions';
+import { useSnackbar } from '../context/useSnackBar';
+import { useAuth } from '../context/AuthContext';
+import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
+import { useSocket } from '../context/socketContext';
 
 export default function SingleAuction() {
     const { auctionId } = useLocalSearchParams();
+    const { userRole } = useAuth()
+    const { showSnackbar } = useSnackbar()
     const navigation = useNavigation();
     const { fetchData } = useAxios();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [remainigTime, setRemainingTime] = useState('')
+    const [money, setMoney] = useState(0)
     const { colors } = useTheme()
+    const { socket } = useSocket()
 
     const getData = async () => {
         try {
@@ -21,6 +30,7 @@ export default function SingleAuction() {
                 method: 'GET',
             });
             setData(res.data);
+            console.log(JSON.stringify(res.data))
             // setRemainingTime(res.data.auction.auctionDate)
             navigation.setOptions({ title: res.data.auction.title });
         } catch (error) {
@@ -50,6 +60,10 @@ export default function SingleAuction() {
 
         return `${hours}h ${minutes}m ${seconds}s`
     }
+    // -----------------------Sockets----------------------
+    useEffect(() => {
+
+    }, [])
     useEffect(() => {
         const timer = setInterval(() => {
             const time = getRemainingTime()
@@ -93,12 +107,44 @@ export default function SingleAuction() {
     };
 
 
+    const assignMoney = async () => {
+        const payload = {
+            auctionId: auctionId,
+            price: money
+        }
+        const res = await fetchData({
+            url: `/api/auction/singleAuction/assignPurse`,
+            method: 'PUT',
+            data: payload
+        });
+        if (res.status) {
+            showSnackbar(res.message, "success")
+            setMoney('')
+            getData()
+        }
+
+    }
+
+    const startAuction = () => {
+        // socket.emit('startAuction', {
+        //     start: true,
+        //     auctionId: auctionId
+        // })
+        
+        router.push(`/aTable?AuctionId=${auctionId}`)
+       
+    }
+
+
+
+
+    // console.log(JSON.stringify(data))
     return (
         <ScrollView style={[styles.container, {
             backgroundColor: colors.background,
 
         }]}>
-            <Card mode="contained"  style={[styles.card, {
+            <Card mode="contained" style={[styles.card, {
                 padding: 2,
                 backgroundColor: colors.overlay(0.12),
             }]}>
@@ -106,10 +152,10 @@ export default function SingleAuction() {
 
                 <Card.Content>
                     <View style={styles.statusContainer}>
-                        <Text variant="bodyMedium" style={[styles.description,{
-                            color:colors.text,
+                        <Text variant="bodySmall" style={[styles.date, {
+                            color: colors.overlay(0.7),
                         }]}>
-                            {data.auction.description}
+                            Auction Date: {new Date(data.auction.auctionDate).toDateString()}
                         </Text>
                         <Chip textStyle={{
                             fontSize: 12,
@@ -117,19 +163,48 @@ export default function SingleAuction() {
                         }} style={[styles.statusBadge, { backgroundColor: getStatusColor(data.auction.status) }]}>
                             {data.auction.status}
                         </Chip>
+                        <TouchableOpacity style={{
+                            backgroundColor: colors.primary,
+                            padding: 10, borderRadius: 50
+                        }}
+                            onPress={startAuction}
+                        >
+                            <SimpleLineIcons name="control-start" size={18} color="white" />
+                        </TouchableOpacity>
                     </View>
-                    <Text variant="bodySmall" style={[styles.date,{
-                        color: colors.overlay(0.7),
+
+                    <Text variant="bodyMedium" style={[styles.description, {
+                        color: colors.text,
                     }]}>
-                        Auction Date: {new Date(data.auction.auctionDate).toDateString()}
+                        {data.auction.description}
                     </Text>
                 </Card.Content>
             </Card>
 
             <Divider bold style={styles.divider} />
+            {userRole === "admin" && <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 15 }}>
+                <TextInput
+                    mode='outlined'
+                    placeholder='purse Money'
+                    label="Purse Money"
+                    keyboardType='number-pad'
+                    value={money}
+                    style={{
+                        width: widthPerWidth(52),
+
+
+                    }}
+                    onChangeText={text => setMoney(text)}
+
+
+                />
+                <Button mode='contained' style={{ width: 150, alignSelf: "flex-end" }} size={'sm'} onPress={assignMoney}>
+                    Assign Money
+                </Button>
+            </View>}
 
             <Text variant="titleMedium" style={styles.sectionTitle}>Teams</Text>
-            {data.teams.length > 0 ? (
+            {data?.teams?.length > 0 ? (
                 data.teams.map((team) => (
                     <Card key={team._id} mode="outlined" style={styles.card}>
                         <Card.Title
@@ -137,6 +212,11 @@ export default function SingleAuction() {
                             subtitle={team.email}
                             left={(props) => <Avatar.Text {...props} label={team.name.charAt(0)} />}
                         />
+                        <Card.Content>
+
+                            <Text variant="bodyMedium">Assigned Purse : {team?.auction[0]?.totalPurse}</Text>
+                            <Text variant="bodyMedium">Remaining Purse : {team?.auction[0]?.remainingPurse}</Text>
+                        </Card.Content>
                     </Card>
                 ))
             ) : (
@@ -156,7 +236,7 @@ export default function SingleAuction() {
                     textAlign: "right"
                 }]}>See all</Text></TouchableOpacity>
             </View>
-            {data.players.length > 0 ? (
+            {data?.players?.length > 0 ? (
                 data.players.map((player) => (
                     <TouchableOpacity onPress={() => router.push(`playerDetails?playerId=${player._id}`)}>
 
@@ -176,6 +256,9 @@ export default function SingleAuction() {
     );
 }
 
+
+
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -186,7 +269,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         borderRadius: 12,
         backgroundColor: '#FFF',
-       
+
     },
     description: {
         flex: 1,
@@ -219,6 +302,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         marginBottom: 8,
+        gap: 20
     },
     statusBadge: {
 

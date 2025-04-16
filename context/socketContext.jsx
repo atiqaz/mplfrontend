@@ -35,12 +35,17 @@ const [allOnlineUsers, setAllOnlineUsers]=useState([])
       console.error("Socket connection error:", err);
     });
 
+    newSocket.on('auctionStarted',(data)=>{
+      console.log({auctionStarted:data._doc})
+      alert('New Auction started')
+      })
     // newSocket.on("onlineUsers",(users)=>{
     //   console.log("allOnlineUsers",users)
     // })
     // Cleanup the connection when the component unmounts
     return () => {
       newSocket.disconnect();
+      newSocket.off('auctionStarted')
       // newSocket.off("onlineUsers")
       console.log("Socket disconnected on cleanup");
     };
