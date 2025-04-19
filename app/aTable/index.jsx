@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { View, StyleSheet, ScrollView, Alert } from 'react-native'
 import { useLocalSearchParams, useNavigation } from 'expo-router'
 import { useIsFocused } from '@react-navigation/core'
-import { Avatar, Card, Text, useTheme as usePaperTheme, Button, Divider, Icon } from 'react-native-paper'
+import { Avatar, Card, Text, useTheme as usePaperTheme, Button, Divider, Icon, Badge, Chip } from 'react-native-paper'
 import useAxios from '../../helper/useAxios'
 import { useSocket } from '../../context/socketContext'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../hooks/useTheme'
+import { useSnackbar } from '../../context/useSnackBar'
 
 // Configuration constants
 const BID_INCREMENT = 1500; // Set your desired bid increment amount here
+const START_BID = 1000
 const currentPlayer = {
   name: "Virat Kohli",
   age: 34,
@@ -36,16 +38,26 @@ export default function AuctionScreen() {
   const { fetchData } = useAxios()
   const { socket } = useSocket()
   const { colors } = useTheme()
+  const { showSnackbar } = useSnackbar()
+
+
   const paperTheme = usePaperTheme()
-  const [currentBid, setCurrentBid] = useState(currentPlayer.basePrice)
+  const [currentPlayer, setCurrentPlayer] = useState()
+  const [currentBid, setCurrentBid] = useState(null)
   const [isBidding, setIsBidding] = useState(false)
   const [purse, setPurse] = useState({
-    remainingPurse: 0, 
+    remainingPurse: 0,
     totalPurse: 0
   })
   const [isValidTeam, setIsValidTeam] = useState(false)
   const [isOutOfRace, setIsOutOfRace] = useState(false)
   const [hasJoinedRoom, setHasJoinedRoom] = useState(false)
+  const [currentBidder, setCurrentBidder] = useState(null)
+  const [singleAuction, setSingleAuction] = useState({})
+  const [disableBidButton, setDisableBidButton] = useState(false)
+  const [soldUnSoldStatus, setSoldUnsoldStatus] = useState(null)
+
+
 
   const {
     isLoggedIn, loggedInUser
@@ -57,6 +69,7 @@ export default function AuctionScreen() {
         url: `/api/auction/singleAuction/details/${AuctionId}`
       })
       navigation.setOptions({ title: data.auction.title || "Auction" })
+      setSingleAuction(data)
 
       const roomId = data?.auction?.roomId
       const payload = {
@@ -74,13 +87,21 @@ export default function AuctionScreen() {
   const handleBid = () => {
     if (currentBid + BID_INCREMENT > purse.remainingPurse) {
       Alert.alert(
-        "Insufficient Funds", 
+        "Insufficient Funds",
         `You need ₹${BID_INCREMENT} more to place this bid`
       );
       return;
     }
-    
+
     setIsBidding(true)
+
+    socket.emit('place:Bid', {
+      roomId: singleAuction?.auction?.roomId,
+      playerId: currentPlayer._id,
+      bidderId: loggedInUser?._id,
+      bidAmount: currentBidder ? currentBid + BID_INCREMENT : START_BID,
+      bidderName: loggedInUser.name
+    })
     // Simulate bid processing
     setTimeout(() => {
       setCurrentBid(currentBid + BID_INCREMENT)
@@ -93,8 +114,10 @@ export default function AuctionScreen() {
   }
 
   const handleOutOfRace = () => {
-    setIsOutOfRace(true);
-    Alert.alert("Out of Race", "You have opted out of bidding for this player");
+    socket.emit('outOfRace', {
+      roomId: singleAuction.auction.roomId,
+      name: loggedInUser.name
+    })
   }
 
   useEffect(() => {
@@ -103,30 +126,107 @@ export default function AuctionScreen() {
     }
   }, [AuctionId, isFocused])
 
+  const handleCurrentBids = useCallback((data) => {
+    console.log('handleCurentBids', data)
+    if (data.bids.length) {
+      const lastBid = data.bids[data.bids.length - 1]
+      if (lastBid.bidderId === loggedInUser?._id) {
+        setDisableBidButton(true)
+
+      } else {
+        setDisableBidButton(false)
+      }
+      setCurrentBidder({
+        name: lastBid.bidderName,
+        bidAmount: lastBid.bidAmount,
+        nextBidAmount: lastBid.bidAmount
+      })
+    }
+  }, [])
+
+  const SOldUnSOld = () => {
+    socket.emit('sold/unsold', {
+      roomId: singleAuction.auction.roomId,
+      currentPlayer: currentPlayer._id
+    })
+  }
+
+
   useEffect(() => {
     const onJoinSuccess = (data) => {
-      console.log('JoinAuctionRoom', data)
-      setIsValidTeam(data.isValidTeam)
-      setPurse({
-        remainingPurse: data.remainingPurse,
-        totalPurse: data.totalPurse
+
+      socket.emit('getCurrentPlayer', {
+        roomId: singleAuction?.auction?.roomId,
+        auctionId: AuctionId
+
       })
+
+      if (!data.totalPurse) {
+        setIsValidTeam(true)
+      }
+      if (data.isValidTeam)
+        setPurse({
+          remainingPurse: data.remainingPurse,
+          totalPurse: data.totalPurse
+        })
       setHasJoinedRoom(true)
-      
-      // Show success message only if user is logged in
-      // if (isLoggedIn) {
-      //   Alert.alert("Success", "You've joined the auction room", [
-      //     { text: "OK", onPress: () => {} }
-      //   ]);
-      // }
+
+
     }
 
+    socket.on('outOfRace', (data) => {
+      console.log('outOfRace', data)
+      showSnackbar(`${data.name} is Out of Race for This Player`, 'info')
+    })
+
+    socket.on('sold/unsold', (data) => {
+      console.log('sold/unsold', data)
+      setSoldUnsoldStatus('Sold')
+
+      setTimeout(()=>{
+        socket.emit('getCurrentPlayer', {
+          roomId: singleAuction?.auction?.roomId,
+          auctionId: AuctionId
+  
+        })
+      },3000)
+    })
+    socket.on('getCurrentPlayer', (data) => {
+      // console.log('getCurrentPlayer', data.player)
+      setCurrentPlayer(data.player)
+      setSoldUnsoldStatus(null)
+      if (data.player.bids.length) {
+        let lastBid = data.player.bids[data.player.bids.length - 1]
+        if (lastBid.bidderId === loggedInUser?._id) {
+          setDisableBidButton(true)
+
+        } else {
+          setDisableBidButton(false)
+        }
+        setCurrentBid(lastBid.bidAmount)
+        setCurrentBidder({
+          name: lastBid.bidderName,
+          bidAmount: lastBid.bidAmount,
+          nextBidAmount: lastBid.bidAmount
+        })
+      } else {
+        setCurrentBid(START_BID)
+      }
+    })
     socket.on('JoinAuctionRoom', onJoinSuccess)
+
+    socket.on('currentBid', handleCurrentBids)
+
 
     return () => {
       socket.off('JoinAuctionRoom', onJoinSuccess)
+      socket.off('getCurrentPlayer')
+      socket.off('outOfRace')
+      socket.off('sold/unsold')
+      socket.off('currentBid', handleCurrentBids)
     }
-  }, [isLoggedIn])
+  }, [isLoggedIn, singleAuction])
+
 
   return (
     <View style={{ backgroundColor: colors.background, flex: 1 }}>
@@ -135,10 +235,10 @@ export default function AuctionScreen() {
         {hasJoinedRoom && (
           <View style={[styles.connectionStatus, { backgroundColor: colors.card }]}>
             <View style={styles.connectionStatusContent}>
-              <Icon 
-                source="check-circle" 
-                size={20} 
-                color="#4CAF50" 
+              <Icon
+                source="check-circle"
+                size={20}
+                color="#4CAF50"
               />
               <Text style={[styles.connectionStatusText, { color: colors.text }]}>
                 Connected to auction room
@@ -149,22 +249,22 @@ export default function AuctionScreen() {
 
         <Card style={[styles.card, { backgroundColor: colors.card }]}>
           <Card.Title
-            title={currentPlayer.name}
+            title={currentPlayer?.playerId?.name}
             titleStyle={styles.playerName}
-            subtitle={currentPlayer.playerRole}
+            subtitle={currentPlayer?.playerId?.playerRole}
             subtitleStyle={[styles.playerRole, { color: colors.primary }]}
             left={(props) =>
-              currentPlayer.image ? (
+              currentPlayer?.playerId?.image ? (
                 <Avatar.Image
                   {...props}
-                  source={{ uri: currentPlayer.image }}
+                  source={{ uri: currentPlayer?.playerId?.image }}
                   size={60}
                   style={styles.avatar}
                 />
               ) : (
                 <Avatar.Text
                   {...props}
-                  label={currentPlayer.name.charAt(0)}
+                  label={currentPlayer?.playerId?.name?.charAt(0)}
                   size={60}
                   style={[styles.avatar, { backgroundColor: colors.primary }]}
                   labelStyle={styles.avatarText}
@@ -182,15 +282,15 @@ export default function AuctionScreen() {
               </Text>
               <View style={styles.infoRow}>
                 <Text variant="bodyMedium" style={[styles.label, { color: colors.text }]}>Age:</Text>
-                <Text style={[styles.value, { color: colors.text }]}>{currentPlayer.age}</Text>
+                <Text style={[styles.value, { color: colors.text }]}>{currentPlayer?.playerId?.age}</Text>
               </View>
               <View style={styles.infoRow}>
                 <Text variant="bodyMedium" style={[styles.label, { color: colors.text }]}>Email:</Text>
-                <Text style={[styles.value, { color: colors.text }]}>{currentPlayer.email}</Text>
+                <Text style={[styles.value, { color: colors.text }]}>{currentPlayer?.playerId?.email}</Text>
               </View>
               <View style={styles.infoRow}>
                 <Text variant="bodyMedium" style={[styles.label, { color: colors.text }]}>Phone:</Text>
-                <Text style={[styles.value, { color: colors.text }]}>{currentPlayer.phone}</Text>
+                <Text style={[styles.value, { color: colors.text }]}>{currentPlayer?.playerId?.phone}</Text>
               </View>
             </View>
 
@@ -201,19 +301,19 @@ export default function AuctionScreen() {
               <View style={styles.infoRow}>
                 <Text variant="bodyMedium" style={[styles.label, { color: colors.text }]}>Batting Style:</Text>
                 <Text style={[styles.value, { color: colors.text }]}>
-                  {currentPlayer.battingDetails.handedness}, {currentPlayer.battingDetails.battingOrder}
+                  {currentPlayer?.playerId?.battingDetails?.handedness}, {currentPlayer?.playerId?.battingDetails?.battingOrder}
                 </Text>
               </View>
               <View style={styles.infoRow}>
                 <Text variant="bodyMedium" style={[styles.label, { color: colors.text }]}>Bowling Style:</Text>
                 <Text style={[styles.value, { color: colors.text }]}>
-                  {currentPlayer.bowlingDetails.bowlingStyle}
+                  {currentPlayer?.playerId?.bowlingDetails?.bowlingStyle}
                 </Text>
               </View>
               <View style={styles.infoRow}>
                 <Text variant="bodyMedium" style={[styles.label, { color: colors.text }]}>Wicketkeeper:</Text>
                 <Text style={[styles.value, { color: colors.text }]}>
-                  {currentPlayer.isWicketkeeper ? "Yes" : "No"}
+                  {currentPlayer?.playerId?.isWicketkeeper ? "Yes" : "No"}
                 </Text>
               </View>
             </View>
@@ -224,22 +324,69 @@ export default function AuctionScreen() {
           <Text variant="titleLarge" style={[styles.currentBidLabel, { color: colors.text }]}>
             Current Bid:
           </Text>
-          <Text variant="headlineMedium" style={[styles.currentBid, { color: colors.primary }]}>
-            ₹{currentBid}
-          </Text>
-          
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text variant="headlineMedium" style={[styles.currentBid, { color: colors.primary }]}>
+              ₹{currentBid}
+            </Text>
+            <View style={{ marginLeft: 8 }}>
+              {soldUnSoldStatus === 'sold' ? (
+                <Chip
+                  icon="check-circle"
+                  style={{
+                    backgroundColor: '#4CAF50', // Green for sold
+                  }}
+                  textStyle={{
+                    color: 'white'
+                  }}
+                >
+                  Sold
+                </Chip>
+              ) : soldUnSoldStatus === 'unsold' ? (
+                <Chip
+                  icon="close-circle"
+                  style={{
+                    backgroundColor: '#F44336', // Red for unsold
+                  }}
+                  textStyle={{
+                    color: 'white'
+                  }}
+                >
+                  Unsold
+                </Chip>
+              ) : (
+                <Chip
+                  icon="clock"
+                  style={{
+                    backgroundColor: '#FFC107', // Amber for pending/auction in progress
+                  }}
+                  textStyle={{
+                    color: 'black'
+                  }}
+                >
+                  Bidding
+                </Chip>
+              )}
+            </View>
+          </View>
+
+          {currentBidder && (
+            <Text variant="bodySmall" style={[styles.currentBid, { color: colors.primary }]}>
+              {currentBidder.name}
+            </Text>
+          )}
+
           {isValidTeam && (
             <View style={styles.purseContainer}>
               <Text variant="bodyMedium" style={[styles.purseText, { color: colors.text }]}>
-                Purse: ₹{purse.remainingPurse} / ₹{purse.totalPurse}
+                Purse: ₹{purse?.remainingPurse} / ₹{purse?.totalPurse}
               </Text>
               <View style={styles.purseBarContainer}>
-                <View 
+                <View
                   style={[
-                    styles.purseBar, 
-                    { 
+                    styles.purseBar,
+                    {
                       width: `${(purse.remainingPurse / purse.totalPurse) * 100}%`,
-                      backgroundColor: purse.remainingPurse >= currentBid + BID_INCREMENT ? 
+                      backgroundColor: purse.remainingPurse >= currentBid + BID_INCREMENT ?
                         colors.primary : '#ff4444'
                     }
                   ]}
@@ -250,19 +397,19 @@ export default function AuctionScreen() {
         </View>
       </ScrollView>
 
-      {isValidTeam && !isOutOfRace && (
+      {isValidTeam && (
         <View style={[styles.bidActionContainer, { backgroundColor: colors.card }]}>
           <View style={styles.actionsRow}>
             <Button
               mode="contained"
               onPress={handleBid}
               loading={isBidding}
-              disabled={isBidding || currentBid + BID_INCREMENT > purse.remainingPurse}
+              disabled={isBidding || currentBid + BID_INCREMENT > purse.remainingPurse || disableBidButton}
               style={[styles.bidButton, { flex: 1 }]}
               labelStyle={styles.bidButtonLabel}
               theme={{ colors: { primary: colors.primary } }}
             >
-              Place Bid (+₹{BID_INCREMENT})
+              {currentBidder ? `Place Bid (+₹ ${BID_INCREMENT})` : 'Place Bid'}
             </Button>
             <View style={styles.buttonSpacer} />
             <Button
@@ -278,6 +425,33 @@ export default function AuctionScreen() {
         </View>
       )}
 
+      {<View style={[styles.bidActionContainer, { backgroundColor: colors.card }]}>
+        <View style={styles.actionsRow}>
+          <Button
+            mode="contained"
+            onPress={SOldUnSOld}
+            // loading={isBidding}
+            // disabled={isBidding || currentBid + BID_INCREMENT > purse.remainingPurse || disableBidButton}
+            style={[styles.bidButton, { flex: 1 }]}
+            labelStyle={styles.bidButtonLabel}
+            theme={{ colors: { primary: colors.primary } }}
+          >
+            {currentBidder ? `Sold` : 'UnSold'}
+          </Button>
+          <View style={styles.buttonSpacer} />
+          <Button
+            mode="outlined"
+            onPress={handleOutOfRace}
+            style={styles.outOfRaceButton}
+            labelStyle={styles.outOfRaceButtonLabel}
+            theme={{ colors: { primary: colors.primary } }}
+            icon={'information'}
+          >
+            last Chance
+          </Button>
+        </View>
+      </View>}
+
       {!isValidTeam && (
         <View style={[styles.bidActionContainer, { backgroundColor: colors.card }]}>
           <Text style={[styles.invalidTeamText, { color: colors.text }]}>
@@ -286,13 +460,13 @@ export default function AuctionScreen() {
         </View>
       )}
 
-      {isOutOfRace && (
+      {/* {isOutOfRace && (
         <View style={[styles.bidActionContainer, { backgroundColor: colors.card }]}>
           <Text style={[styles.outOfRaceText, { color: colors.text }]}>
             You're out of race for this player
           </Text>
         </View>
-      )}
+      )} */}
     </View>
   )
 }

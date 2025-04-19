@@ -23,7 +23,7 @@ export default function CustomSnackbar() {
         if (snackbarData.visible) {
             const timer = setTimeout(() => {
                 hideSnackbar();
-            }, 400); // Force close after 400ms
+            }, 3000); // Force close after 400ms
 
             return () => clearTimeout(timer); // Cleanup in case of re-render
         }
@@ -34,7 +34,7 @@ export default function CustomSnackbar() {
          <Snackbar
             visible={snackbarData.visible}
             onDismiss={hideSnackbar}
-            duration={400}
+            duration={3000}
             style={[styles.snackbar, { backgroundColor }]}
         >
             <Text style={[styles.snackbarText, { color: textColor }]}>
