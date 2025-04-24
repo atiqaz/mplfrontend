@@ -1,26 +1,27 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { baseUrl } from "../helper/useAxios";
+import { Snackbar, Portal } from "react-native-paper";
 
 const SocketContext = createContext();
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
-const [allOnlineUsers, setAllOnlineUsers]=useState([])
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [allOnlineUsers, setAllOnlineUsers] = useState([]);
 
   useEffect(() => {
-    // Initialize the socket connection
     const newSocket = io(baseUrl, {
-      autoConnect: true, // Automatically connect
-      reconnection: true, // Attempt reconnection on disconnect
-      reconnectionAttempts: 5, // Number of reconnection attempts
-      timeout: 10000, // Timeout for connection
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      timeout: 10000,
     });
 
     setSocket(newSocket);
 
-    // Event listeners
     newSocket.on("connect", () => {
       console.log("Socket connected:", newSocket.id);
       setIsConnected(true);
@@ -35,29 +36,38 @@ const [allOnlineUsers, setAllOnlineUsers]=useState([])
       console.error("Socket connection error:", err);
     });
 
-    newSocket.on('auctionStarted',(data)=>{
-      console.log({auctionStarted:data._doc})
-      alert('New Auction started')
-      })
-    // newSocket.on("onlineUsers",(users)=>{
-    //   console.log("allOnlineUsers",users)
-    // })
-    // Cleanup the connection when the component unmounts
+    newSocket.on("auctionStarted", (data) => {
+      const message = `${data._doc.title} auction has ${data._doc.status}`;
+      console.log({ auctionStarted: data._doc });
+      setSnackbarMessage(message);
+      setSnackbarVisible(true);
+    });
+
     return () => {
       newSocket.disconnect();
-      newSocket.off('auctionStarted')
-      // newSocket.off("onlineUsers")
+      newSocket.off("auctionStarted");
       console.log("Socket disconnected on cleanup");
     };
   }, []);
 
-  
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>
+      <Portal>
+        <Snackbar
+          visible={snackbarVisible}
+          onDismiss={() => setSnackbarVisible(false)}
+          duration={4000}
+          action={{
+            label: 'Dismiss',
+            onPress: () => setSnackbarVisible(false),
+          }}
+        >
+          {snackbarMessage}
+        </Snackbar>
+      </Portal>
       {children}
     </SocketContext.Provider>
   );
 };
 
-// Custom hook to use the SocketContext
 export const useSocket = () => useContext(SocketContext);

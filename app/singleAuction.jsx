@@ -126,14 +126,18 @@ export default function SingleAuction() {
     }
 
     const startAuction = () => {
-        // socket.emit('startAuction', {
-        //     start: true,
-        //     auctionId: auctionId
-        // })
+      if(data.auction.status !== "Completed"){ 
+        if(userRole === "admin"){
+        socket.emit('startAuction', {
+            start: true,
+            auctionId: auctionId
+        })
+        }
         
-        router.push(`/aTable?AuctionId=${auctionId}`)
-       
+        
     }
+    router.push(`/aTable?AuctionId=${auctionId}`)
+}
 
 
 

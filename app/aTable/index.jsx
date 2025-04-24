@@ -2,15 +2,17 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { View, StyleSheet, ScrollView, Alert } from 'react-native'
 import { useLocalSearchParams, useNavigation } from 'expo-router'
 import { useIsFocused } from '@react-navigation/core'
-import { Avatar, Card, Text, useTheme as usePaperTheme, Button, Divider, Icon, Badge, Chip } from 'react-native-paper'
+import { Avatar, Card, Text, useTheme as usePaperTheme, Button, Divider, Icon, Badge, Chip, ActivityIndicator, IconButton } from 'react-native-paper'
 import useAxios from '../../helper/useAxios'
 import { useSocket } from '../../context/socketContext'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../hooks/useTheme'
 import { useSnackbar } from '../../context/useSnackBar'
+import PlayerStatusBadge from '../../components/SoldUnsolsStamp'
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // Configuration constants
-const BID_INCREMENT = 1500; // Set your desired bid increment amount here
+const BID_INCREMENT = 1000; // Set your desired bid increment amount here
 const START_BID = 1000
 const currentPlayer = {
   name: "Virat Kohli",
@@ -30,6 +32,7 @@ const currentPlayer = {
   },
   basePrice: 1000
 }
+
 
 export default function AuctionScreen() {
   const { AuctionId } = useLocalSearchParams()
@@ -56,11 +59,12 @@ export default function AuctionScreen() {
   const [singleAuction, setSingleAuction] = useState({})
   const [disableBidButton, setDisableBidButton] = useState(false)
   const [soldUnSoldStatus, setSoldUnsoldStatus] = useState(null)
+  const [loadingPlayer, setLoadingPlayer] = useState(false)
 
 
 
   const {
-    isLoggedIn, loggedInUser
+    isLoggedIn, loggedInUser, userRole
   } = useAuth()
 
   const getAuctionData = async () => {
@@ -104,10 +108,10 @@ export default function AuctionScreen() {
     })
     // Simulate bid processing
     setTimeout(() => {
-      setCurrentBid(currentBid + BID_INCREMENT)
+      setCurrentBid(currentBidder ? currentBid + BID_INCREMENT : START_BID)
       setPurse(prev => ({
         ...prev,
-        remainingPurse: prev.remainingPurse - BID_INCREMENT
+        remainingPurse: currentBidder ? START_BID : prev.remainingPurse - BID_INCREMENT
       }))
       setIsBidding(false)
     }, 1000)
@@ -120,6 +124,7 @@ export default function AuctionScreen() {
     })
   }
 
+
   useEffect(() => {
     if (isFocused) {
       getAuctionData()
@@ -127,7 +132,8 @@ export default function AuctionScreen() {
   }, [AuctionId, isFocused])
 
   const handleCurrentBids = useCallback((data) => {
-    console.log('handleCurentBids', data)
+    console.log(`currentBid ${loggedInUser?.name}`, data)
+
     if (data.bids.length) {
       const lastBid = data.bids[data.bids.length - 1]
       if (lastBid.bidderId === loggedInUser?._id) {
@@ -136,10 +142,11 @@ export default function AuctionScreen() {
       } else {
         setDisableBidButton(false)
       }
+      setCurrentBid(lastBid.bidAmount)
       setCurrentBidder({
         name: lastBid.bidderName,
         bidAmount: lastBid.bidAmount,
-        nextBidAmount: lastBid.bidAmount
+        nextBidAmount: lastBid.nextBidAmount
       })
     }
   }, [])
@@ -151,6 +158,20 @@ export default function AuctionScreen() {
     })
   }
 
+  const lastChance = () => {
+    socket.emit('lastChance', {
+      roomId: singleAuction.auction.roomId,
+
+    })
+  }
+
+  const handleCompleteAuction = () => {
+    socket.emit('startAuction', {
+      complete: true,
+      auctionId: AuctionId
+    })
+  }
+  const handleSkipPlayer = () => { }
 
   useEffect(() => {
     const onJoinSuccess = (data) => {
@@ -161,7 +182,7 @@ export default function AuctionScreen() {
 
       })
 
-      if (!data.totalPurse) {
+      if (data.totalPurse) {
         setIsValidTeam(true)
       }
       if (data.isValidTeam)
@@ -175,26 +196,52 @@ export default function AuctionScreen() {
     }
 
     socket.on('outOfRace', (data) => {
-      console.log('outOfRace', data)
+
       showSnackbar(`${data.name} is Out of Race for This Player`, 'info')
     })
 
     socket.on('sold/unsold', (data) => {
-      console.log('sold/unsold', data)
+      let _data = data.player
+      console.log('sold/usoled', data)
+
       setSoldUnsoldStatus('Sold')
 
-      setTimeout(()=>{
+      setPurse((prev) => ({
+        ...prev,
+        remainingPurse: data?.teamUpdate?.remainingPurse,
+
+      }))
+      setCurrentPlayer((prev) => ({
+        ...prev,
+        status: _data.status,
+        soldTo: {
+          name: _data?.soldTo?.name
+        }
+      }))
+      setTimeout(() => {
+        setSoldUnsoldStatus(null)
+        setLoadingPlayer(true)
+        setCurrentPlayer(null)
+      }, 3000)
+      setTimeout(() => {
         socket.emit('getCurrentPlayer', {
           roomId: singleAuction?.auction?.roomId,
           auctionId: AuctionId
-  
+
         })
-      },3000)
+      }, 5500)
+    })
+
+    socket.on('lastChance', (data) => {
+      showSnackbar(` Last Chance to Bid for This Player`, 'info')
+
     })
     socket.on('getCurrentPlayer', (data) => {
-      // console.log('getCurrentPlayer', data.player)
+      console.log('getCurrentPlayer', data)
+      setLoadingPlayer(false)
       setCurrentPlayer(data.player)
       setSoldUnsoldStatus(null)
+
       if (data.player.bids.length) {
         let lastBid = data.player.bids[data.player.bids.length - 1]
         if (lastBid.bidderId === loggedInUser?._id) {
@@ -210,7 +257,9 @@ export default function AuctionScreen() {
           nextBidAmount: lastBid.bidAmount
         })
       } else {
-        setCurrentBid(START_BID)
+        setCurrentBid(0)
+        setDisableBidButton(false)
+        setCurrentBidder(null)
       }
     })
     socket.on('JoinAuctionRoom', onJoinSuccess)
@@ -223,6 +272,7 @@ export default function AuctionScreen() {
       socket.off('getCurrentPlayer')
       socket.off('outOfRace')
       socket.off('sold/unsold')
+      socket.off('lastChance')
       socket.off('currentBid', handleCurrentBids)
     }
   }, [isLoggedIn, singleAuction])
@@ -248,79 +298,162 @@ export default function AuctionScreen() {
         )}
 
         <Card style={[styles.card, { backgroundColor: colors.card }]}>
-          <Card.Title
-            title={currentPlayer?.playerId?.name}
-            titleStyle={styles.playerName}
-            subtitle={currentPlayer?.playerId?.playerRole}
-            subtitleStyle={[styles.playerRole, { color: colors.primary }]}
-            left={(props) =>
-              currentPlayer?.playerId?.image ? (
-                <Avatar.Image
-                  {...props}
-                  source={{ uri: currentPlayer?.playerId?.image }}
-                  size={60}
-                  style={styles.avatar}
-                />
-              ) : (
+          {/* Status Badge - Only shows when player is loaded and has status */}
+          {!loadingPlayer && currentPlayer?.status && (
+            <PlayerStatusBadge
+              status={currentPlayer.status}
+              soldToName={currentPlayer.soldTo?.name || 'Md Atiqyr Hussain'}
+            />
+          )}
+
+          {loadingPlayer ? (
+            // Loading State
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator
+                size="large"
+                color={colors.primary}
+                style={styles.loadingIndicator}
+              />
+              <Text style={[styles.loadingText, { color: colors.text }]}>
+                Loading next player...
+              </Text>
+              <View style={styles.loadingPlayerPlaceholder}>
                 <Avatar.Text
-                  {...props}
-                  label={currentPlayer?.playerId?.name?.charAt(0)}
+                  label="?"
                   size={60}
                   style={[styles.avatar, { backgroundColor: colors.primary }]}
                   labelStyle={styles.avatarText}
                 />
-              )
-            }
-          />
-
-          <Divider style={[styles.divider, { backgroundColor: colors.border }]} />
-
-          <Card.Content>
-            <View style={styles.section}>
-              <Text variant="titleSmall" style={[styles.sectionTitle, { color: colors.primary }]}>
-                Personal Information
-              </Text>
-              <View style={styles.infoRow}>
-                <Text variant="bodyMedium" style={[styles.label, { color: colors.text }]}>Age:</Text>
-                <Text style={[styles.value, { color: colors.text }]}>{currentPlayer?.playerId?.age}</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text variant="bodyMedium" style={[styles.label, { color: colors.text }]}>Email:</Text>
-                <Text style={[styles.value, { color: colors.text }]}>{currentPlayer?.playerId?.email}</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text variant="bodyMedium" style={[styles.label, { color: colors.text }]}>Phone:</Text>
-                <Text style={[styles.value, { color: colors.text }]}>{currentPlayer?.playerId?.phone}</Text>
-              </View>
-            </View>
-
-            <View style={styles.section}>
-              <Text variant="titleSmall" style={[styles.sectionTitle, { color: colors.primary }]}>
-                Cricket Details
-              </Text>
-              <View style={styles.infoRow}>
-                <Text variant="bodyMedium" style={[styles.label, { color: colors.text }]}>Batting Style:</Text>
-                <Text style={[styles.value, { color: colors.text }]}>
-                  {currentPlayer?.playerId?.battingDetails?.handedness}, {currentPlayer?.playerId?.battingDetails?.battingOrder}
-                </Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text variant="bodyMedium" style={[styles.label, { color: colors.text }]}>Bowling Style:</Text>
-                <Text style={[styles.value, { color: colors.text }]}>
-                  {currentPlayer?.playerId?.bowlingDetails?.bowlingStyle}
-                </Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text variant="bodyMedium" style={[styles.label, { color: colors.text }]}>Wicketkeeper:</Text>
-                <Text style={[styles.value, { color: colors.text }]}>
-                  {currentPlayer?.playerId?.isWicketkeeper ? "Yes" : "No"}
+                <Text style={[styles.placeholderText, { color: colors.text }]}>
+                  Player information coming soon
                 </Text>
               </View>
             </View>
-          </Card.Content>
+          ) : !currentPlayer ? (
+            // No Player Available State
+            <View style={styles.emptyContainer}>
+              <MaterialCommunityIcons
+                name="account-question"
+                size={60}
+                color={colors.primary}
+              />
+              <Text style={[styles.emptyText, { color: colors.text }]}>
+                No players remaining in this auction
+              </Text>
+              {userRole === "admin" && <Button
+                mode="contained"
+                onPress={handleCompleteAuction}
+                style={styles.completeButton}
+                labelStyle={styles.buttonLabel}
+              >
+                Mark Auction as Complete
+              </Button>}
+            </View>
+          ) : (
+            // Player Data
+            <>
+              <Card.Title
+                title={currentPlayer?.playerId?.name || "Player Name"}
+                titleStyle={styles.playerName}
+                subtitle={currentPlayer?.playerId?.playerRole || "Role"}
+                subtitleStyle={[styles.playerRole, { color: colors.primary }]}
+                left={(props) =>
+                  currentPlayer?.playerId?.image ? (
+                    <Avatar.Image
+                      {...props}
+                      source={{ uri: currentPlayer?.playerId?.image }}
+                      size={60}
+                      style={styles.avatar}
+                    />
+                  ) : (
+                    <Avatar.Text
+                      {...props}
+                      label={currentPlayer?.playerId?.name?.charAt(0) || "P"}
+                      size={60}
+                      style={[styles.avatar, { backgroundColor: colors.primary }]}
+                      labelStyle={styles.avatarText}
+                    />
+                  )
+                }
+                right={(props) => (
+                  <IconButton
+                    {...props}
+                    icon="close"
+                    onPress={handleSkipPlayer}
+                    color={colors.error}
+                    style={styles.skipButton}
+                  />
+                )}
+              />
+
+              <Divider style={[styles.divider, { backgroundColor: colors.border }]} />
+
+              <Card.Content>
+                <View style={styles.section}>
+                  <Text variant="titleSmall" style={[styles.sectionTitle, { color: colors.primary }]}>
+                    Personal Information
+                  </Text>
+                  <PlayerInfoRow
+                    label="Age:"
+                    value={currentPlayer?.playerId?.age}
+                    colors={colors}
+                  />
+                  <PlayerInfoRow
+                    label="Email:"
+                    value={currentPlayer?.playerId?.email}
+                    colors={colors}
+                  />
+                  <PlayerInfoRow
+                    label="Phone:"
+                    value={currentPlayer?.playerId?.phone}
+                    colors={colors}
+                  />
+                </View>
+
+                <View style={styles.section}>
+                  <Text variant="titleSmall" style={[styles.sectionTitle, { color: colors.primary }]}>
+                    Cricket Details
+                  </Text>
+                  <PlayerInfoRow
+                    label="Batting Style:"
+                    value={`${currentPlayer?.playerId?.battingDetails?.handedness}, ${currentPlayer?.playerId?.battingDetails?.battingOrder}`}
+                    colors={colors}
+                  />
+                  <PlayerInfoRow
+                    label="Bowling Style:"
+                    value={currentPlayer?.playerId?.bowlingDetails?.bowlingStyle}
+                    colors={colors}
+                  />
+                  <PlayerInfoRow
+                    label="Wicketkeeper:"
+                    value={currentPlayer?.playerId?.isWicketkeeper ? "Yes" : "No"}
+                    colors={colors}
+                  />
+                </View>
+              </Card.Content>
+
+              <Card.Actions style={styles.cardActions}>
+                <Button
+                  mode="outlined"
+                  onPress={handleSkipPlayer}
+                  style={[styles.actionButton, { borderColor: colors.error }]}
+                  labelStyle={[styles.buttonLabel, { color: colors.error }]}
+                >
+                  Skip Player
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={handleCompleteAuction}
+                  style={styles.actionButton}
+                  labelStyle={styles.buttonLabel}
+                >
+                  Complete Auction
+                </Button>
+              </Card.Actions>
+            </>
+          )}
         </Card>
-
-        <View style={styles.bidContainer}>
+        {currentPlayer && <View style={styles.bidContainer}>
           <Text variant="titleLarge" style={[styles.currentBidLabel, { color: colors.text }]}>
             Current Bid:
           </Text>
@@ -394,10 +527,11 @@ export default function AuctionScreen() {
               </View>
             </View>
           )}
-        </View>
+        </View>}
+
       </ScrollView>
 
-      {isValidTeam && (
+      {(isValidTeam && currentPlayer) && (
         <View style={[styles.bidActionContainer, { backgroundColor: colors.card }]}>
           <View style={styles.actionsRow}>
             <Button
@@ -425,7 +559,7 @@ export default function AuctionScreen() {
         </View>
       )}
 
-      {<View style={[styles.bidActionContainer, { backgroundColor: colors.card }]}>
+      {(currentPlayer && userRole ==="admin") && <View style={[styles.bidActionContainer, { backgroundColor: colors.card }]}>
         <View style={styles.actionsRow}>
           <Button
             mode="contained"
@@ -441,7 +575,7 @@ export default function AuctionScreen() {
           <View style={styles.buttonSpacer} />
           <Button
             mode="outlined"
-            onPress={handleOutOfRace}
+            onPress={lastChance}
             style={styles.outOfRaceButton}
             labelStyle={styles.outOfRaceButtonLabel}
             theme={{ colors: { primary: colors.primary } }}
@@ -452,7 +586,7 @@ export default function AuctionScreen() {
         </View>
       </View>}
 
-      {!isValidTeam && (
+      {(!isValidTeam && userRole !== 'admin') && (
         <View style={[styles.bidActionContainer, { backgroundColor: colors.card }]}>
           <Text style={[styles.invalidTeamText, { color: colors.text }]}>
             Your team is not valid for this auction or you don't have enough funds
@@ -470,6 +604,16 @@ export default function AuctionScreen() {
     </View>
   )
 }
+const PlayerInfoRow = ({ label, value, colors }) => (
+  <View style={styles.infoRow}>
+    <Text variant="bodyMedium" style={[styles.label, { color: colors.text }]}>
+      {label}
+    </Text>
+    <Text style={[styles.value, { color: colors.text }]}>
+      {value || 'N/A'}
+    </Text>
+  </View>
+);
 
 const styles = StyleSheet.create({
   card: {
@@ -609,5 +753,69 @@ const styles = StyleSheet.create({
   connectionStatusText: {
     marginLeft: 8,
     fontWeight: '500'
-  }
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingIndicator: {
+    marginBottom: 20,
+  },
+  loadingText: {
+    marginBottom: 30,
+    fontSize: 16,
+  },
+  loadingPlayerPlaceholder: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  placeholderText: {
+    marginTop: 15,
+    fontStyle: 'italic',
+  },
+  // Optional: Create a separate component for info rows
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 5,
+  },
+  label: {
+    fontWeight: 'bold',
+  },
+  value: {
+    flex: 1,
+    textAlign: 'right',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+  },
+  emptyText: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginVertical: 20,
+  },
+  completeButton: {
+    marginTop: 20,
+    width: '80%',
+  },
+  cardActions: {
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  actionButton: {
+    flex: 1,
+    marginHorizontal: 8,
+  },
+  buttonLabel: {
+    fontWeight: 'bold',
+  },
+  skipButton: {
+    marginRight: 8,
+  },
 })
