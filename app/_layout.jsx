@@ -99,6 +99,14 @@ function MainLayoutProvider() {
                         headerShown: true,
                     }}
                 />
+                 <Stack.Screen
+                    name="auctionTerms"
+                    options={{
+                        presentation: 'transparentModal',
+                        animation: 'slide_from_bottom',
+                        headerShown: false,
+                    }}
+                />
                 
                 <Stack.Screen
                     name="teams"

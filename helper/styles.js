@@ -30,5 +30,15 @@ export const globalStyles = {
       color: '#fff', // React Native does not apply `color` to buttons; you may style text separately
       borderRadius: 5,
     },
+    buttonStyles:(styles)=>{
+      return {
+        ...styles,
+        backgroundColor: '#4caf50',
+        paddingHorizontal:10,
+        paddingVertical:5,
+        borderRadius:50,
+        
+      }
+    }
   };
   

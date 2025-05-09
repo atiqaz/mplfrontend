@@ -9,6 +9,7 @@ import { useSnackbar } from '../context/useSnackBar';
 import { useAuth } from '../context/AuthContext';
 import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
 import { useSocket } from '../context/socketContext';
+import { globalStyles } from '../helper/styles';
 
 export default function SingleAuction() {
     const { auctionId } = useLocalSearchParams();
@@ -23,6 +24,8 @@ export default function SingleAuction() {
     const { colors } = useTheme()
     const { socket } = useSocket()
 
+
+
     const getData = async () => {
         try {
             const res = await fetchData({
@@ -32,13 +35,25 @@ export default function SingleAuction() {
             setData(res.data);
             console.log(JSON.stringify(res.data))
             // setRemainingTime(res.data.auction.auctionDate)
-            navigation.setOptions({ title: res.data.auction.title });
+            navigation.setOptions({
+                title: res.data.auction.title,
+                headerRight: () => <TouchableOpacity
+                    onPress={() => router.push(`auctionTerms?auctionId=${auctionId}`)}
+                    style={[globalStyles.buttonStyles(
+                      userRole !== "admin" &&  {
+                            display: "none"
+                        }
+                    ),]}>
+                    <Text style={{ color: "white", textTransform: 'capitalize', }}>tems&Co.</Text>
+                </TouchableOpacity>
+            });
         } catch (error) {
             console.error(error);
         } finally {
             setLoading(false);
         }
     };
+    console.log(userRole)
 
     const getRemainingTime = () => {
         const now = new Date()
@@ -126,18 +141,18 @@ export default function SingleAuction() {
     }
 
     const startAuction = () => {
-      if(data.auction.status !== "Completed"){ 
-        if(userRole === "admin"){
-        socket.emit('startAuction', {
-            start: true,
-            auctionId: auctionId
-        })
+        if (data.auction.status !== "Completed") {
+            if (userRole === "admin") {
+                socket.emit('startAuction', {
+                    start: true,
+                    auctionId: auctionId
+                })
+            }
+
+
         }
-        
-        
+        router.push(`/aTable?AuctionId=${auctionId}`)
     }
-    router.push(`/aTable?AuctionId=${auctionId}`)
-}
 
 
 

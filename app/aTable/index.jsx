@@ -432,7 +432,7 @@ export default function AuctionScreen() {
                 </View>
               </Card.Content>
 
-              <Card.Actions style={styles.cardActions}>
+              {/* <Card.Actions style={styles.cardActions}>
                 <Button
                   mode="outlined"
                   onPress={handleSkipPlayer}
@@ -449,7 +449,7 @@ export default function AuctionScreen() {
                 >
                   Complete Auction
                 </Button>
-              </Card.Actions>
+              </Card.Actions> */}
             </>
           )}
         </Card>

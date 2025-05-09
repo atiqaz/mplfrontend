@@ -7,7 +7,9 @@ import { useAuth } from '../context/AuthContext';
 // export const baseUrl="http://192.168.83.124:3031"
 // export const baseUrl='https://mplbackend-5yl2.onrender.com'
 // export const baseUrl="http://192.168.29.174:3031"
-export const baseUrl="http://192.168.1.10:3031"
+// export const baseUrl="http://192.168.1.10:3031"
+// export const baseUrl="https://mpl.backend.mdatiq.in/"
+export const baseUrl="http://192.168.1.25:3031/"
 
  
 
